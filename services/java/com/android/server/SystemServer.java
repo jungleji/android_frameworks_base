@@ -158,6 +158,7 @@ class ServerThread extends Thread {
         ConnectivityService connectivity = null;
         WifiP2pService wifiP2p = null;
         WifiService wifi = null;
+        EthernetService ethernet = null;
         NsdService serviceDiscovery= null;
         IPackageManager pm = null;
         Context context = null;
@@ -521,6 +522,14 @@ class ServerThread extends Thread {
             } catch (Throwable e) {
                 reportWtf("starting Wi-Fi Service", e);
             }
+
+           try {
+                   Slog.i(TAG, "Ethernet Service");
+                   ethernet = new EthernetService(context);
+                   ServiceManager.addService(Context.ETHERNET_SERVICE, ethernet);
+           } catch (Throwable e) {
+                   reportWtf("starting Ethernet Service", e);
+           }
 
             try {
                 Slog.i(TAG, "Connectivity Service");

@@ -27,6 +27,7 @@ import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.net.wimax.WimaxManagerConstants;
+import android.net.ethernet.EthernetManager;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.Message;
@@ -137,7 +138,7 @@ public class NetworkController extends BroadcastReceiver {
     //ethernet
     private boolean mEtherConnected = false;
     private int mEtherIconId = 0;
-    private int mLastEtherIconId = 0;
+    private int mEtherActivityIconId = 0; // overlay arrows for ethernet direction
 
 
     // our ui
@@ -161,6 +162,7 @@ public class NetworkController extends BroadcastReceiver {
     int mLastDataDirectionOverlayIconId = -1;
     int mLastWifiIconId = -1;
     int mLastWimaxIconId = -1;
+    int mLastEtherIconId = -1;
     int mLastCombinedSignalIconId = -1;
     int mLastDataTypeIconId = -1;
     String mLastCombinedLabel = "";
@@ -178,7 +180,8 @@ public class NetworkController extends BroadcastReceiver {
         void setMobileDataIndicators(boolean visible, int strengthIcon, int activityIcon,
                 int typeIcon, String contentDescription, String typeContentDescription);
         void setIsAirplaneMode(boolean is, int airplaneIcon);
-        void setEtherIndicators(boolean visible, int etherIcon, String contentDescription);
+        void setEtherIndicators(boolean visible, int strengthIcon, int activityIcon,
+                                String contentDescription);
     }
 
     public interface NetworkSignalChangedCallback {
@@ -245,6 +248,8 @@ public class NetworkController extends BroadcastReceiver {
         filter.addAction(ConnectivityManager.INET_CONDITION_ACTION);
         filter.addAction(Intent.ACTION_CONFIGURATION_CHANGED);
         filter.addAction(Intent.ACTION_AIRPLANE_MODE_CHANGED);
+        filter.addAction(EthernetManager.ETHERNET_STATE_CHANGED_ACTION);
+        filter.addAction(EthernetManager.NETWORK_STATE_CHANGED_ACTION);
         mWimaxSupported = mContext.getResources().getBoolean(
                 com.android.internal.R.bool.config_wimaxEnabled);
         if(mWimaxSupported) {
@@ -338,6 +343,7 @@ public class NetworkController extends BroadcastReceiver {
                 // only show ethernet in the cluster if connected
                 mEtherConnected,
                 mEtherIconId,
+                mEtherActivityIconId,
                 mContentDescriptionEther);
 
         if (mIsWimaxEnabled && mWimaxConnected) {
@@ -424,6 +430,10 @@ public class NetworkController extends BroadcastReceiver {
                 action.equals(WimaxManagerConstants.SIGNAL_LEVEL_CHANGED_ACTION) ||
                 action.equals(WimaxManagerConstants.WIMAX_NETWORK_STATE_CHANGED_ACTION)) {
             updateWimaxState(intent);
+            refreshViews();
+        } else if (action.equals(EthernetManager.NETWORK_STATE_CHANGED_ACTION)
+		|| action.equals(EthernetManager.ETHERNET_STATE_CHANGED_ACTION)) {
+	    updateEtherState(intent);
             refreshViews();
         }
     }
@@ -973,6 +983,30 @@ public class NetworkController extends BroadcastReceiver {
         }
     }
 
+    // ===== Ethernet State =========================================================
+
+    private void updateEtherState(Intent intent){
+        final String action = intent.getAction();
+        if (action.equals(EthernetManager.NETWORK_STATE_CHANGED_ACTION)) {
+            final NetworkInfo networkInfo = (NetworkInfo)
+                    intent.getParcelableExtra(EthernetManager.EXTRA_NETWORK_INFO);
+            boolean wasConnected = mEtherConnected;
+            mEtherConnected = networkInfo != null && networkInfo.isConnected();
+	}
+
+        updateEtherIcons();
+    }
+
+    private void updateEtherIcons(){
+        if (mEtherConnected) {
+            mEtherIconId = R.drawable.stat_sys_ether_fully;
+            mContentDescriptionEther = mContext.getString(R.string.ethernet_label);
+        } else {
+            mEtherIconId = R.drawable.stat_sys_ether;
+            //mContentDescriptionEther = "DISCONNECTED";
+        }
+    }
+
     // ===== Full or limited Internet connectivity ==================================
 
     private void updateConnectivity(Intent intent) {
@@ -1009,22 +1043,13 @@ public class NetworkController extends BroadcastReceiver {
             mBluetoothTethered = false;
         }
 
-        if (info != null && info.getType() == ConnectivityManager.TYPE_ETHERNET) {
-            mEtherConnected = info.isConnected();
-            mEtherIconId = (mInetCondition == 1
-                    ? R.drawable.stat_sys_ether_fully
-                    : R.drawable.stat_sys_ether);
-        } else {
-            mEtherConnected = false;
-            mEtherIconId = 0;
-        }
-
         // We want to update all the icons, all at once, for any condition change
         updateDataNetType();
         updateWimaxIcons();
         updateDataIcon();
         updateTelephonySignalStrength();
         updateWifiIcons();
+        updateEtherIcons();
     }
 
 
@@ -1138,9 +1163,11 @@ public class NetworkController extends BroadcastReceiver {
                     R.string.accessibility_bluetooth_tether);
         }
 
-        mEtherConnected = (mConnectedNetworkType == ConnectivityManager.TYPE_ETHERNET);
         if (mEtherConnected) {
-            mContentDescriptionEther = combinedLabel = mContext.getString(R.string.ethernet_label);
+            combinedLabel = mContext.getString(R.string.ethernet_label);
+            combinedActivityIconId = mEtherIconId;
+            combinedSignalIconId = mEtherIconId;
+            mContentDescriptionCombinedSignal = mContentDescriptionEther;
         }
 
         if (mAirplaneMode &&
