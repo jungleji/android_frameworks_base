@@ -58,7 +58,7 @@ public class SignalClusterView
     private int mEtherIconId = 0;
     private String mWifiDescription, mMobileDescription, mMobileTypeDescription, mEtherDescription;
 
-    ViewGroup mWifiGroup, mMobileGroup;
+    ViewGroup mWifiGroup, mMobileGroup, mEtherGroup;
     ImageView mWifi, mMobile, mWifiActivity, mMobileActivity, mMobileType, mAirplane, mEther;
     View mSpacer;
 
@@ -121,6 +121,7 @@ public class SignalClusterView
         mMobileType     = (ImageView) findViewById(R.id.mobile_type);
         mSpacer         =             findViewById(R.id.spacer);
         mAirplane       = (ImageView) findViewById(R.id.airplane);
+        mEtherGroup     = (ViewGroup) findViewById(R.id.ethernet_combo);
         mEther          = (ImageView) findViewById(R.id.ethernet);
 
         apply();
@@ -177,9 +178,10 @@ public class SignalClusterView
     }
 
     @Override
-    public void setEtherIndicators(boolean visible, int etherIcon, String contentDescription) {
+    public void setEtherIndicators(boolean visible, int strengthIcon, int activityIcon, String contentDescription) {
         mEtherVisible = visible;
-        mEtherIconId = etherIcon;
+        mEtherStateId = strengthIcon;
+        mEtherActivityId = activityIcon;
         mEtherDescription = contentDescription;
 
         apply();
@@ -208,6 +210,14 @@ public class SignalClusterView
         } else {
             mWifiGroup.setVisibility(View.GONE);
         }
+
+	if(mEtherVisible){
+		mEtherGroup.setVisibility(View.VISIBLE);
+		mEther.setImageResource(mEtherStateId);
+		mEtherGroup.setContentDescription(mEtherDescription);
+	} else {
+		mEtherGroup.setVisibility(View.GONE);
+	}
 
         if (DEBUG) Slog.d(TAG,
                 String.format("wifi: %s sig=%d act=%d",
@@ -239,7 +249,7 @@ public class SignalClusterView
             mEther.setVisibility(View.GONE);
         }
 
-        if (mMobileVisible && mWifiVisible && mIsAirplaneMode) {
+        if (mMobileVisible && (mWifiVisible || mEtherVisible) && mIsAirplaneMode) {
             mSpacer.setVisibility(View.INVISIBLE);
         } else {
             mSpacer.setVisibility(View.GONE);
@@ -251,7 +261,7 @@ public class SignalClusterView
                     mMobileStrengthId, mMobileActivityId, mMobileTypeId));
 
         mMobileType.setVisibility(
-                !mWifiVisible ? View.VISIBLE : View.GONE);
+                !(mWifiVisible || mEtherVisible) ? View.VISIBLE : View.GONE);
 
         updateSettings();
     }
