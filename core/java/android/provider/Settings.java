@@ -60,6 +60,9 @@ import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.HashSet;
 
+/* support shortcut keys with color keys for some specific websites and apps */
+import android.view.KeyEvent;
+
 /**
  * The Settings provider contains global system-level device preferences.
  */
@@ -3188,6 +3191,228 @@ public final class Settings {
          */
         public static final String VOLUME_KEYS_CONTROL_RING_STREAM = "volume_keys_control_ring_stream";
 
+        /*************************************************************************/
+        /**                         AW Custom Definition Begin                  **/
+
+        /**
+         * Author :huanglong@allwinnertech<br/>
+         * Description:To set weather scan the tf card.<br/>
+         * Date :2013-3-13
+         *
+         * @hide
+         */
+        public static final String IS_SCAN_TF_CARD = "is_scan_tf_card";
+
+        /**
+         * Author :huanglong@allwinnertech<br/>
+         * Description:To use default or special accelerometer coordinate
+         * system.<br/>
+         * Date :2013-3-13
+         *
+         * @hide
+         */
+        public static final String ACCELEROMETER_COORDINATE = "accelerometer_coordinate";
+
+        /**
+         * Author :huanglong@allwinnertech<br/>
+         * Description:the display mode options.<br/>
+         * Date :2013-3-13
+         *
+         * @hide
+         */
+        public static final String DISPLAY_ADAPTION_MODE = "display_adaption_mode";
+
+        /**
+         * Author :huanglong@allwinnertech<br/>
+         * Description:enable the screen adaption...<br/>
+         * Date :2013-3-13
+         *
+         * @hide
+         */
+        public static final String DISPLAY_ADAPTION_ENABLE = "display_adapter_enable";
+
+        /**
+         * Author :huanglong@allwinnertech<br/>
+         * Description:enable the smart brightness in nuclear..<br/>
+         * Date :2013-3-13
+         *
+         * @hide
+         */
+        public static final String SMART_BRIGHTNESS_ENABLE = "smart_brightness_enable";
+
+        /**
+         * Author :huanglong@allwinnertech<br/>
+         * Description:enable the smart brightness preview mode in nuclear.<br/>
+         * Date :2013-3-13
+         *
+         * @hide
+         */
+        public static final String SMART_BRIGHTNESS_PREVIEW_ENABLE = "smart_brightness_enable";
+
+        /**
+         * Author :huanglong@allwinnertech<br/>
+         * Description:record the hdmi output mode .<br/>
+         * Date :2013-3-13
+         *
+         * @hide
+         */
+        public static final String HDMI_OUTPUT_MODE = "hdmi_output_mode";
+
+        /* add by Gary. start {{----------------------------------- */
+        /* 2011-11-1 */
+        /*
+         * support shortcut keys with color keys for some specific websites and
+         * apps
+         */
+        /**
+         * one shortcut key for websites or apps
+         * @hide
+         */
+        public static final String SHORTCUT_KEY_0 = "shortcut_key_0";
+        /**
+         * one shortcut key for websites or apps
+         * @hide
+         */
+        public static final String SHORTCUT_KEY_1 = "shortcut_key_1";
+        /**
+         * one shortcut key for websites or apps
+         * @hide
+         */
+        public static final String SHORTCUT_KEY_2 = "shortcut_key_2";
+        /**
+         * one shortcut key for websites or apps
+         * @hide
+         */
+        public static final String SHORTCUT_KEY_3 = "shortcut_key_3";
+        /**@hide*/
+        public static final String SHORTCUT_PATH_SEPARATOR = "--split--";
+        /**@hide*/
+        public static final String SHORTCUT_PATH_TYPE_WEBSITE = "website";
+        /**@hide*/
+        public static final String SHORTCUT_PATH_TYPE_APP = "app";
+        /**@hide*/
+        public static String findNameByKey(int key) {
+            for (int i = 0; i < keyShortcutInfoArray.length; i++) {
+                if (keyShortcutInfoArray[i].key == key)
+                    return keyShortcutInfoArray[i].name;
+            }
+
+            return null;
+        }
+
+        private static class KeyShortcutInfo {
+            public int key;
+            public String name;
+
+            public KeyShortcutInfo(int key, String name) {
+                this.key = key;
+                this.name = name;
+            }
+        }
+
+        private static KeyShortcutInfo[] keyShortcutInfoArray = {
+                new KeyShortcutInfo(KeyEvent.KEYCODE_PROG_RED, SHORTCUT_KEY_0),
+                new KeyShortcutInfo(KeyEvent.KEYCODE_PROG_GREEN, SHORTCUT_KEY_1),
+                new KeyShortcutInfo(KeyEvent.KEYCODE_PROG_YELLOW,
+                        SHORTCUT_KEY_2),
+                new KeyShortcutInfo(KeyEvent.KEYCODE_PROG_BLUE, SHORTCUT_KEY_3)
+        };
+        /* add by Gary. end -----------------------------------}} */
+
+        /**
+         * Author :ygwang@allwinnertech<br/>
+         * Description:adjust the display area.<br/>
+         * Date :2011-12-10
+         *
+         * @hide
+         */
+        public static final String DISPLAY_AREA_RATIO = "display_area_ratio";
+
+        /**
+         * Author :ygwang@allwinnertech<br/>
+         * Description:To set weather scan the usb host.<br/>
+         * Date :2011-12-10
+         *
+         * @hide
+         */
+        public static final String IS_SCAN_USB_HOST = "is_scan_usb_host";
+
+        /**
+         * Author :ygwang@allwinnertech<br/>
+         * Description:record the display format and the advance of the mouse in
+         * mouse mode<br/>
+         * Date :2011-12-10
+         *
+         * @hide
+         */
+        public static final String DISPLY_OUTPUT_FORMAT = "display_output_format";
+        /**@hide*/
+        public static final String MOUSE_ADVANCE = "mouse_advance";
+
+        /**
+         * Author :ygwang@allwinnertech<br/>
+         * Description:record the color parameters : brightness, contrast,and
+         * saturation<br/>
+         * Date :2011-12-11
+         *
+         * @hide
+         */
+        public static final String COLOR_BRIGHTNESS = "color_brightness";
+        /**@hide*/
+        public static final String COLOR_CONTRAST = "color_contrast";
+        /**@hide*/
+        public static final String COLOR_SATURATION = "color_saturation";
+
+        /**
+         * Author :ygwang@allwinnertech<br/>
+         * Description:record the audio output type<br/>
+         * Date :2011-12-11
+         *
+         * @hide
+         */
+        public static final String AUDIO_OUTPUT_TYPE = "audio_output_type";
+
+        /**
+         * Author :ygwang@allwinnertech<br/>
+         * Description:record the audio output channel<br/>
+         * Date :2011-12-17
+         *
+         * @hide
+         */
+        public static final String AUDIO_OUTPUT_CHANNEL = "audio_output_channel";
+
+        /**
+         * Author :ygwang@allwinnertech<br/>
+         * Description:directly power off when long press on the power key<br/>
+         * Date :2011-12-17
+         *
+         * @hide
+         */
+        public static final String DIRECTLY_POWER_OFF = "directly_power_off";
+
+        /**
+         * Author :ygwang@allwinnertech<br/>
+         * Description:add a switch to control BD folder play mode<br/>
+         * Date :2012-4-27
+         *
+         * @hide
+         */
+        public static final String BD_FOLDER_PLAY_MODE = "bd_folder_play_mode";
+
+        /**
+         * Author: huanglong@allwinnertech<br/>
+         * Description:advanced bright system<br/>
+         * Date:2013-3-13
+         *
+         * @hide
+         */
+        public static final String BRIGHT_SYSTEM_MODE = "bright_system_mode";
+        /**@hide*/
+        public static final String BRIGHTNESS_LIGHT_MODE = "brightness_light_mode";
+
+        /**                         AW Custom Definition End                    **/
+        /*************************************************************************/
+
         /**
          * Settings to backup. This is here so that it's in the same place as the settings
          * keys and easy to update.
@@ -3278,6 +3503,29 @@ public final class Settings {
             POWER_MENU_USER_ENABLED,
             LOCKSCREEN_VIBRATE_ENABLED,
             LOCKSCREEN_ALWAYS_SHOW_BATTERY,
+            BRIGHT_SYSTEM_MODE,
+            BRIGHTNESS_LIGHT_MODE,
+            IS_SCAN_TF_CARD,
+            DISPLAY_ADAPTION_MODE,
+            DISPLAY_ADAPTION_ENABLE,
+            SMART_BRIGHTNESS_ENABLE,
+            SHORTCUT_KEY_0,
+            SHORTCUT_KEY_1,
+            SHORTCUT_KEY_2,
+            SHORTCUT_KEY_3,
+            DISPLAY_ADAPTION_ENABLE,
+            DISPLAY_AREA_RATIO,
+            IS_SCAN_USB_HOST,
+            DISPLY_OUTPUT_FORMAT,
+            MOUSE_ADVANCE,
+            COLOR_BRIGHTNESS,
+            COLOR_CONTRAST,
+            COLOR_SATURATION,
+            AUDIO_OUTPUT_TYPE,
+            AUDIO_OUTPUT_CHANNEL,
+            DIRECTLY_POWER_OFF,
+            BD_FOLDER_PLAY_MODE,
+            HDMI_OUTPUT_MODE,
         };
 
         // Settings moved to Settings.Secure
@@ -3509,18 +3757,6 @@ public final class Settings {
         @Deprecated
         public static final String WIFI_WATCHDOG_PING_TIMEOUT_MS =
             Secure.WIFI_WATCHDOG_PING_TIMEOUT_MS;
-
-        /**
-         * Ethernet related configurations
-         */
-        public static final String ETHERNET_ON      = "eth_on";
-        public static final String ETHERNET_MODE    = "eth_mode";
-        public static final String ETHERNET_IP      = "eth_ip";
-        public static final String ETHERNET_MASK    = "eth_netmask";
-        public static final String ETHERNET_DNS     = "eth_dns";
-        public static final String ETHERNET_ROUTE   = "eth_route";
-        public static final String ETHERNET_CONF    = "eth_conf";
-        public static final String ETHERNET_IFNAME  = "eth_ifname";
     }
 
     /**
@@ -5096,6 +5332,58 @@ public final class Settings {
          * @hide
          */
         public static final String PRIVACY_GUARD_DEFAULT = "privacy_guard_default";
+
+        /**
+         * Ethernet related configurations
+         */
+        public static final String ETHERNET_ON      = "eth_on";
+        public static final String ETHERNET_MODE    = "eth_mode";
+        public static final String ETHERNET_IP      = "eth_ip";
+        public static final String ETHERNET_MASK    = "eth_netmask";
+        public static final String ETHERNET_DNS     = "eth_dns";
+        public static final String ETHERNET_ROUTE   = "eth_route";
+        public static final String ETHERNET_CONF    = "eth_conf";
+        public static final String ETHERNET_IFNAME  = "eth_ifname";
+
+        /*************************************************************************/
+        /**                         AW Custom Definition Begin                  **/
+        /**
+         * Author :huanglong@allwinnertech<br/>
+         * Description:use to save the pppoe interface .<br/>
+         * Date:2013-3-13
+         *
+         * @hide
+         */
+        public static final String PPPOE_INTERFACE = "pppoe_interface";
+
+        /**
+         * Author :huanglong@allwinnertech<br/>
+         * Description:Use to set weather pppoe auto connect to internet .<br/>
+         * Date :2013-3-13
+         *
+         * @hide
+         */
+        public static final String PPPOE_AUTO_CONN = "pppoe_auto_conn";
+
+        /**
+         * Author :huanglong@allwinnertech<br/>
+         * Description:use to set weather enable pppoe .<br/>
+         * Date :2013-3-13
+         *
+         * @hide
+         */
+        public static final String PPPOE_ENABLE = "pppoe_enable";
+
+        /**
+         * Author :huanglong@allwinnertech<br/>
+         * Description:802.11 country code in ISO 3166 format .<br/>
+         * Date :2013-3-13
+         *
+         * @hide
+         */
+        public static final String WIFI_COUNTRY_CODE = "wifi_country_code";
+        /**                         AW Custom Definition End                     **/
+        /**************************************************************************/
 
         /**
          * This are the settings to be backed up.

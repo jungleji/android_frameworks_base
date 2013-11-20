@@ -196,4 +196,86 @@
 
     <!-- Default for Settings.System.UI_FORCE_OVERFLOW_BUTTON. -->
     <integer name="def_force_overflow_button">0</integer>
+
+    <!-- Below is the AW custom definition -->
+    <!-- Default for Accelerometer coordinate -->
+    <string name="def_accelerometer_coordinate">default</string>
+    <!-- Default for screen adaption, full or center -->
+    <string name="def_screen_adaption_mode">center</string>
+    <!-- Default for enable screen adaption -->
+    <bool name="def_display_adation_enable">false</bool>
+
+    <integer name="def_bright_system">0</integer>
+    <integer name="def_brightness_light">0</integer>
+
+    <!-- Default for enable media scanning for sd card -->
+    <bool name="def_is_scan_tf_card">true</bool>
+    <!-- Default for enable media scanning for usb host -->
+    <bool name="def_is_scan_usb_host">true</bool>
+    <!-- Default for enable smart brightness in nuclear -->
+    <bool name="def_smart_brightness_enable">false</bool>
+    <!-- Default for enable smart brightness in nuclear -->
+    <bool name="def_smart_brightness_preview_enable">false</bool>
+
+    <!-- support shortcut keys with color keys for some specific websites and apps -->
+    <string name="def_shortcut_key_0" translatable="false">website--split--http://tv.sohu.com</string>
+    <string name="def_shortcut_key_1" translatable="false">website--split--http://v.qq.com/</string>
+    <string name="def_shortcut_key_2" translatable="false">app--split--com.android.settings--split--com.android.settings.Settings</string>
+    <string name="def_shortcut_key_3" translatable="false">app--split--com.softwinner.TvdFileManager--split--com.softwinner.TvdFileManager.MainUI</string>
+
+    <!-- adjust the display area -->
+    <integer name="def_display_area_ratio">95</integer>
+
+    <!-- record the display format and the advance of the mouse in mouse mode -->
+    <!-- the display string's values are defined in DispList.java -->
+    <integer name="def_mouse_advance">30</integer>
+
+    <string name="def_display_output_format" translatable="false">NTSC</string>
+
+    <!-- record the color parameters : brightness, contrast,and saturation -->
+    <integer name="def_color_brightness">50</integer>
+    <integer name="def_color_contrast">50</integer>
+    <integer name="def_color_saturation">50</integer>
+
+    <!-- record the audio output type -->
+    <!-- the string's values are defined in AudioManager.java -->
+    <string name="def_audio_output_type" translatable="false">NORMAL</string>
+
+    <!-- record the audio output channel -->
+    <!-- the string's values are defined in AudioManager.java -->
+    <string name="def_audio_output_channel" translatable="false">AUDIO_HDMI</string>
+
+    <!-- directly power off when long press on the power key -->
+    <bool name="def_directly_power_off">true</bool>
+
+    <!-- init the default input method -->
+    <string name="def_input_method">com.android.inputmethod.latin/.LatinIME</string>
+
+    <!-- init the defalut value of the ethernet -->
+    <bool name="def_ethernet_on">true</bool>
+    <bool name="def_ethernet_conf">true</bool>
+    <bool name="def_ethernet_mode">true</bool>
+    <string name="def_ethernet_name">eth0</string>
+
+    <!-- use to save the pppoe default value -->
+    <string name="def_pppoe_interface">eth0</string>
+    <bool name="def_pppoe_auto_conn">false</bool>
+    <bool name="def_pppoe_enable">false</bool>
+
+    <bool name="def_hidden_google_application">false</bool>
+
+    <string name="def_time_12_24">24</string>
+
+    <!-- add a switch to control BD folder play mode -->
+    <bool name="def_bd_folder_play_mode">true</bool>
+
+    <!-- Default for enable face unlock -->
+    <string name="def_lockscreen_options" translatable="false">enable_facelock</string>
+    <!-- Default for hdmi output mode -->
+    <integer name="def_hdmi_output_mode">0xff</integer>
+
+    <!-- Default for wifi country code: US(1~11)EU(1~13)JP(1~14) -->
+    <add-resource name="wifi_country_code" type="string" />
+
+    <string name="wifi_country_code">EU</string>
 </resources>

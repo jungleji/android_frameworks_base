@@ -28,6 +28,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
+import android.view.WindowManager;
 import android.media.AudioManager;
 import android.media.AudioService;
 import android.net.ConnectivityManager;
@@ -1985,6 +1986,86 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     R.string.def_lockscreen_targets);
             loadIntegerSetting(stmt, Settings.System.UI_FORCE_OVERFLOW_BUTTON,
                     R.integer.def_force_overflow_button);
+
+            /* Below is the AW custom code */
+            loadStringSetting(stmt, Settings.System.ACCELEROMETER_COORDINATE,
+                    R.string.def_accelerometer_coordinate);
+
+            loadBooleanSetting(stmt, Settings.System.IS_SCAN_TF_CARD,
+                    R.bool.def_is_scan_tf_card);
+
+            loadStringSetting(stmt, Settings.System.TIME_12_24,
+                    R.string.def_time_12_24);
+
+            loadStringSetting(stmt, Settings.System.DISPLAY_ADAPTION_MODE,
+                    R.string.def_screen_adaption_mode);
+
+            loadBooleanSetting(stmt, Settings.System.IS_SCAN_USB_HOST,
+                    R.bool.def_is_scan_usb_host);
+
+            /* support shortcut keys with color keys for some specific websites and apps */
+            loadStringSetting(stmt, Settings.System.SHORTCUT_KEY_0,
+                    R.string.def_shortcut_key_0);
+            loadStringSetting(stmt, Settings.System.SHORTCUT_KEY_1,
+                    R.string.def_shortcut_key_1);
+            loadStringSetting(stmt, Settings.System.SHORTCUT_KEY_2,
+                    R.string.def_shortcut_key_2);
+            loadStringSetting(stmt, Settings.System.SHORTCUT_KEY_3,
+                    R.string.def_shortcut_key_3);
+
+            WindowManager wm = (WindowManager)mContext.getSystemService(mContext.WINDOW_SERVICE);
+            android.view.Display display = wm.getDefaultDisplay();
+            int width = display.getWidth();
+            int height = display.getHeight();
+            if ((width * 3.0 / (height * 5.0) != 1.0) &&
+                (width * 5.0 / (height * 3.0) != 1.0)){
+                loadBooleanSetting(stmt, Settings.System.DISPLAY_ADAPTION_ENABLE,
+                        R.bool.def_display_adation_enable);
+            } else {
+                loadSetting(stmt, Settings.System.DISPLAY_ADAPTION_ENABLE, false);
+            }
+
+            /* adjust the display area */
+            loadIntegerSetting(stmt, Settings.System.DISPLAY_AREA_RATIO,
+                    R.integer.def_display_area_ratio);
+
+            loadBooleanSetting(stmt, Settings.System.SMART_BRIGHTNESS_ENABLE,
+                    R.bool.def_smart_brightness_enable);
+            loadBooleanSetting(stmt, Settings.System.SMART_BRIGHTNESS_PREVIEW_ENABLE,
+                    R.bool.def_smart_brightness_preview_enable);
+
+            /* record the display format and the advance of the mouse in mouse mode */
+            loadStringSetting(stmt, Settings.System.DISPLY_OUTPUT_FORMAT,
+                    R.string.def_display_output_format);
+            loadIntegerSetting(stmt, Settings.System.MOUSE_ADVANCE,
+                    R.integer.def_mouse_advance);
+
+            /* record the color parameters : brightness, contrast,and saturation */
+            loadIntegerSetting(stmt, Settings.System.COLOR_BRIGHTNESS,
+                    R.integer.def_color_brightness);
+            loadIntegerSetting(stmt, Settings.System.COLOR_CONTRAST,
+                    R.integer.def_color_contrast);
+            loadIntegerSetting(stmt, Settings.System.COLOR_SATURATION,
+                    R.integer.def_color_saturation);
+
+            /* record the audio output type */
+            loadStringSetting(stmt, Settings.System.AUDIO_OUTPUT_TYPE,
+                    R.string.def_audio_output_type);
+
+            /* record the audio output channel */
+            loadStringSetting(stmt, Settings.System.AUDIO_OUTPUT_CHANNEL,
+                    R.string.def_audio_output_channel);
+
+            /* directly power off when long press on the power key */
+            loadBooleanSetting(stmt, Settings.System.DIRECTLY_POWER_OFF,
+                    R.bool.def_directly_power_off);
+
+            /* add a switch to control BD folder play mode */
+            loadBooleanSetting(stmt, Settings.System.BD_FOLDER_PLAY_MODE,
+                    R.bool.def_bd_folder_play_mode);
+
+            loadIntegerSetting(stmt, Settings.System.HDMI_OUTPUT_MODE,
+                    R.integer.def_hdmi_output_mode);
         } finally {
             if (stmt != null) stmt.close();
         }
@@ -2021,6 +2102,19 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
             loadStringSetting(stmt, Settings.Secure.LOCATION_PROVIDERS_ALLOWED,
                     R.string.def_location_providers_allowed);
+
+            /* load default wifi country code*/
+            loadStringSetting(stmt, Settings.Secure.WIFI_COUNTRY_CODE, R.string.wifi_country_code);
+
+            /* init the defalut value of the ethernet */
+            loadBooleanSetting(stmt, Settings.Secure.ETHERNET_ON,
+                    R.bool.def_ethernet_on);
+            loadBooleanSetting(stmt, Settings.Secure.ETHERNET_CONF,
+                    R.bool.def_ethernet_conf);
+            loadBooleanSetting(stmt, Settings.Secure.ETHERNET_MODE,
+                    R.bool.def_ethernet_mode);
+            loadStringSetting(stmt, Settings.Secure.ETHERNET_IFNAME,
+                    R.string.def_ethernet_name);
 
             String wifiWatchList = SystemProperties.get("ro.com.android.wifi-watchlist");
             if (!TextUtils.isEmpty(wifiWatchList)) {
@@ -2097,6 +2191,21 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
             loadBooleanSetting(stmt, Settings.Secure.USER_SETUP_COMPLETE,
                     R.bool.def_user_setup_complete);
+
+            /* init the default input method */
+            loadStringSetting(stmt, Settings.Secure.DEFAULT_INPUT_METHOD,
+                    R.string.def_input_method);
+
+            /* init the pppoe value*/
+            loadStringSetting(stmt, Settings.Secure.PPPOE_INTERFACE,
+                    R.string.def_pppoe_interface);
+            loadBooleanSetting(stmt, Settings.Secure.PPPOE_AUTO_CONN,
+                    R.bool.def_pppoe_auto_conn);
+            loadBooleanSetting(stmt, Settings.Secure.PPPOE_ENABLE,
+                    R.bool.def_pppoe_enable);
+
+            loadSetting(stmt, "system_work_mode", "1");
+
         } finally {
             if (stmt != null) stmt.close();
         }
