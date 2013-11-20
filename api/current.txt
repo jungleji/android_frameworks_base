@@ -5438,6 +5438,7 @@ package android.content {
     field public static final java.lang.String DISPLAY_SERVICE = "display";
     field public static final java.lang.String DOWNLOAD_SERVICE = "download";
     field public static final java.lang.String DROPBOX_SERVICE = "dropbox";
+    field public static final java.lang.String ETHERNET_SERVICE = "ethernet";
     field public static final java.lang.String INPUT_METHOD_SERVICE = "input_method";
     field public static final java.lang.String INPUT_SERVICE = "input";
     field public static final java.lang.String KEYGUARD_SERVICE = "keyguard";
@@ -5466,7 +5467,6 @@ package android.content {
     field public static final java.lang.String WALLPAPER_SERVICE = "wallpaper";
     field public static final java.lang.String WIFI_P2P_SERVICE = "wifip2p";
     field public static final java.lang.String WIFI_SERVICE = "wifi";
-    field public static final java.lang.String ETHERNET_SERVICE = "ethernet";
     field public static final java.lang.String WINDOW_SERVICE = "window";
   }
 
@@ -9805,7 +9805,6 @@ package android.hardware {
     method public int getJpegQuality();
     method public int getJpegThumbnailQuality();
     method public android.hardware.Camera.Size getJpegThumbnailSize();
-    method public java.lang.String getPowerMode();
     method public int getMaxExposureCompensation();
     method public int getMaxNumDetectedFaces();
     method public int getMaxNumFocusAreas();
@@ -9815,6 +9814,7 @@ package android.hardware {
     method public int getMinExposureCompensation();
     method public int getPictureFormat();
     method public android.hardware.Camera.Size getPictureSize();
+    method public java.lang.String getPowerMode();
     method public android.hardware.Camera.Size getPreferredPreviewSizeForVideo();
     method public int getPreviewFormat();
     method public void getPreviewFpsRange(int[]);
@@ -19026,6 +19026,14 @@ package android.provider {
     field public static final deprecated java.lang.String DIM_SCREEN = "dim_screen";
     field public static final java.lang.String DTMF_TONE_WHEN_DIALING = "dtmf_tone";
     field public static final java.lang.String END_BUTTON_BEHAVIOR = "end_button_behavior";
+    field public static final java.lang.String ETHERNET_CONF = "eth_conf";
+    field public static final java.lang.String ETHERNET_DNS = "eth_dns";
+    field public static final java.lang.String ETHERNET_IFNAME = "eth_ifname";
+    field public static final java.lang.String ETHERNET_IP = "eth_ip";
+    field public static final java.lang.String ETHERNET_MASK = "eth_netmask";
+    field public static final java.lang.String ETHERNET_MODE = "eth_mode";
+    field public static final java.lang.String ETHERNET_ON = "eth_on";
+    field public static final java.lang.String ETHERNET_ROUTE = "eth_route";
     field public static final java.lang.String FONT_SCALE = "font_scale";
     field public static final java.lang.String HAPTIC_FEEDBACK_ENABLED = "haptic_feedback_enabled";
     field public static final deprecated java.lang.String HTTP_PROXY = "http_proxy";
