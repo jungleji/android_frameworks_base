@@ -2110,6 +2110,26 @@ public abstract class Context {
 
     /**
      * Use with {@link #getSystemService} to retrieve a
+     * {@link android.telephony.TelephonyManager} for handling management the
+     * display features of the device.
+     *
+     * @see #getSystemService
+     * @see android.view.DisplayManager
+     */
+    public static final String DISPLAY_SERVICE_AW = "display_aw";
+
+    /**
+     * Use with {@link #getSystemService} to retrieve a
+     * {@link android.telephony.TelephonyManager} for handling management the
+     * display features of the device.
+     *
+     * @see #getSystemService
+     * @see android.view.DisplayManager
+     */
+    public static final String WIFIDISPLAY_SERVICE = "wifidisplay";
+
+    /**
+     * Use with {@link #getSystemService} to retrieve a
      * {@link android.text.ClipboardManager} for accessing and modifying
      * the contents of the global clipboard.
      *

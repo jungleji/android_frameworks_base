@@ -20,6 +20,65 @@
    *************************************************************** -->
 <resources>
 
+<!-- Text for display format -->
+  <java-symbol type="string" name="disp_format_ntsc" />
+  <java-symbol type="string" name="disp_format_pal" />
+  <java-symbol type="string" name="disp_format_ypbpr_480i" />
+  <java-symbol type="string" name="disp_format_ypbpr_480p" />
+  <java-symbol type="string" name="disp_format_ypbpr_576i" />
+  <java-symbol type="string" name="disp_format_ypbpr_576p" />
+  <java-symbol type="string" name="disp_format_ypbpr_720p_50hz" />
+  <java-symbol type="string" name="disp_format_ypbpr_720p_60hz" />
+  <java-symbol type="string" name="disp_format_ypbpr_1080p_60hz" />
+  <java-symbol type="string" name="disp_format_ypbpr_1080p_50hz" />
+  <java-symbol type="string" name="disp_format_hdmi_480i" />
+  <java-symbol type="string" name="disp_format_hdmi_480p" />
+  <java-symbol type="string" name="disp_format_hdmi_576i" />
+  <java-symbol type="string" name="disp_format_hdmi_576p" />
+  <java-symbol type="string" name="disp_format_hdmi_720p_50hz" />
+  <java-symbol type="string" name="disp_format_hdmi_720p_60hz" />
+  <java-symbol type="string" name="disp_format_hdmi_1080i_50hz" />
+  <java-symbol type="string" name="disp_format_hdmi_1080i_60hz" />
+  <java-symbol type="string" name="disp_format_hdmi_1080p_24hz" />
+  <java-symbol type="string" name="disp_format_hdmi_1080p_50hz" />
+  <java-symbol type="string" name="disp_format_hdmi_1080p_60hz" />
+  <java-symbol type="string" name="disp_format_vga_640_480" />
+  <java-symbol type="string" name="disp_format_vga_800_600" />
+  <java-symbol type="string" name="disp_format_vga_1024_768" />
+  <java-symbol type="string" name="disp_format_vga_1280_720" />
+  <java-symbol type="string" name="disp_format_vga_1280_1024" />
+  <java-symbol type="string" name="disp_format_vga_1360_768" />
+  <java-symbol type="string" name="disp_format_vga_1440_900" />
+  <java-symbol type="string" name="disp_format_vga_1680_1050" />
+  <java-symbol type="string" name="disp_format_vga_1920_1080" />
+
+  <java-symbol type="string" name="display_type_hmdi" />
+  <java-symbol type="string" name="display_type_cvbs" />
+  <java-symbol type="string" name="display_type_ypbpr" />
+  <java-symbol type="string" name="display_type_vga" />
+
+<!-- handle the plug in and out of the display cables -->
+  <java-symbol type="string" name="hdmi_plug_in" />
+  <java-symbol type="string" name="hdmi_plug_out" />
+  <java-symbol type="string" name="cvbs_plug_in" />
+  <java-symbol type="string" name="cvbs_plug_out" />
+  <java-symbol type="string" name="ypbpr_plug_in" />
+  <java-symbol type="string" name="ypbpr_plug_out" />
+  <java-symbol type="string" name="vga_plug_in" />
+  <java-symbol type="string" name="vga_plug_out" />
+
+<!-- support the mouse mode -->
+  <java-symbol type="string" name="enter_key_mouse_mode" />
+  <java-symbol type="string" name="exit_key_mouse_mode" />
+  <java-symbol type="string" name="title_key_mouse_mode" />
+  <java-symbol type="string" name="detail_key_mouse_mode" />
+
+<!-- Add by huanglong , Text for message for wifi password incorrect-->
+  <java-symbol type="string" name="wifi_password_key_incorrect" />
+
+<!-- an icon for the mouse mode -->
+  <java-symbol type="drawable" name="key_mouse" />
+
 <!-- ===============================================================
    Resources for version 1 of the platform.
    =============================================================== -->

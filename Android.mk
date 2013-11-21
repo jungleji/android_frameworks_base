@@ -78,7 +78,7 @@ LOCAL_SRC_FILES += \
 	core/java/android/app/IThumbnailRetriever.aidl \
 	core/java/android/app/ITransientNotification.aidl \
 	core/java/android/app/IUiModeManager.aidl \
-    core/java/android/app/IUserSwitchObserver.aidl \
+	core/java/android/app/IUserSwitchObserver.aidl \
 	core/java/android/app/IWallpaperManager.aidl \
 	core/java/android/app/IWallpaperManagerCallback.aidl \
 	core/java/android/app/admin/IDevicePolicyManager.aidl \
@@ -223,10 +223,18 @@ LOCAL_SRC_FILES += \
 	telephony/java/com/android/internal/telephony/IWapPushManager.aidl \
 	wifi/java/android/net/wifi/IWifiManager.aidl \
 	wifi/java/android/net/wifi/p2p/IWifiP2pManager.aidl \
-	ethernet/java/android/net/ethernet/IEthernetManager.aidl \
 	voip/java/android/net/sip/ISipSession.aidl \
 	voip/java/android/net/sip/ISipSessionListener.aidl \
 	voip/java/android/net/sip/ISipService.aidl \
+	ethernet/java/android/net/ethernet/IEthernetManager.aidl \
+	core/java/android/net/http/HttpResponseCache.java \
+	core/java/android/net/http/HttpAuthHeader.java \
+	core/java/android/net/http/AndroidHttpClient.java \
+	core/java/android/net/http/Timer.java \
+	core/java/android/os/IDynamicPManager.aidl \
+	core/java/android/wifidisplay/IWifiDisplayManager.aidl \
+	core/java/android/wifidisplay/IWifiDisplayThread.aidl \
+	core/java/android/view/IDisplayManagerAw.aidl \
 	fmradio/java/com/stericsson/hardware/fm/IFmReceiver.aidl \
 	fmradio/java/com/stericsson/hardware/fm/IFmTransmitter.aidl \
 	fmradio/java/com/stericsson/hardware/fm/IOnStateChangedListener.aidl \
