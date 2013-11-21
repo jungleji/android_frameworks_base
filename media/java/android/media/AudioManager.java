@@ -39,6 +39,7 @@ import android.view.KeyEvent;
 import android.view.VolumePanel;
 
 import java.util.HashMap;
+import java.util.ArrayList;
 
 /**
  * AudioManager provides access to volume and ringer mode control.
@@ -2520,4 +2521,74 @@ public class AudioManager {
         }
     }
 
+    /* define audio device name */
+    public static final String AUDIO_NAME_CODEC		= "AUDIO_CODEC";
+    public static final String AUDIO_NAME_HDMI		= "AUDIO_HDMI";
+    public static final String AUDIO_NAME_SPDIF		= "AUDIO_SPDIF";
+
+    /* define type of device */
+    public static final String AUDIO_INPUT_TYPE		= "audio_devices_in";
+    public static final String AUDIO_OUTPUT_TYPE	= "audio_devices_out";
+    public static final String AUDIO_INPUT_ACTIVE	= "audio_devices_in_active";
+    public static final String AUDIO_OUTPUT_ACTIVE	= "audio_devices_out_active";
+    /* get audio devices list(the devices which are supported)
+     *  @param devType  the audio device type,maybe in/out
+     */
+    public ArrayList<String> getAudioDevices(String devType){
+        if(!devType.equals(AUDIO_INPUT_TYPE) && !devType.equals(AUDIO_OUTPUT_TYPE)){
+            return null;
+        }
+        ArrayList<String> audioDevList = new ArrayList<String>();
+        String list = getParameters(devType);
+        if(list == null)
+            return null;
+        Log.d(TAG,"type " + devType + "  list " + list);
+        String[] audioList = list.split(",");
+        for (String audio: audioList) {
+            if (!"".equals(audio)) {
+                audioDevList.add(audio);
+            }
+        }
+        return audioDevList;
+    }
+
+    /* get current active devices */
+    /* @param devType  the audio device type
+     *  @return the current list of the active device
+     */
+    public ArrayList<String> getActiveAudioDevices(String devType){
+        if(!devType.equals(AUDIO_INPUT_ACTIVE) && !devType.equals(AUDIO_OUTPUT_ACTIVE)){
+            return null;
+        }
+        ArrayList<String> audioDevList = new ArrayList<String>();
+        String list = getParameters(devType);
+        if (list == null)
+            return null;
+        Log.d(TAG,"type " + devType + "  list " + list);
+        String[] audioList = list.split(",");
+        for (String audio: audioList) {
+            if (!"".equals(audio)) {
+                audioDevList.add(audio);
+            }
+        }
+        return audioDevList;
+    }
+
+    /* set audio devices active
+     * @param devices
+     * @param state  must be AUDIO_INPUT_ACTIVE or AUDIO_OUTPUT_ACTIVE
+     */
+    public void setAudioDeviceActive(ArrayList<String> devices, String state){
+        if(!state.equals(AUDIO_INPUT_ACTIVE) && !state.equals(AUDIO_OUTPUT_ACTIVE))
+            return;
+        String audio = null;
+        for(String device:devices){
+            if(audio == null){
+                audio = device;
+            }else{
+                audio = audio + "," + device;
+            }
+        }
+        setParameter(state,audio);
+    }
 }

@@ -180,8 +180,7 @@ public class SignalClusterView
     @Override
     public void setEtherIndicators(boolean visible, int strengthIcon, int activityIcon, String contentDescription) {
         mEtherVisible = visible;
-        mEtherStateId = strengthIcon;
-        mEtherActivityId = activityIcon;
+        mEtherIconId = strengthIcon;
         mEtherDescription = contentDescription;
 
         apply();
@@ -213,7 +212,7 @@ public class SignalClusterView
 
 	if(mEtherVisible){
 		mEtherGroup.setVisibility(View.VISIBLE);
-		mEther.setImageResource(mEtherStateId);
+		mEther.setImageResource(mEtherIconId);
 		mEtherGroup.setContentDescription(mEtherDescription);
 	} else {
 		mEtherGroup.setVisibility(View.GONE);

@@ -10844,6 +10844,8 @@ package android.media {
     method public void adjustStreamVolume(int, int, int);
     method public void adjustSuggestedStreamVolume(int, int, int);
     method public void adjustVolume(int, int);
+    method public java.util.ArrayList<java.lang.String> getActiveAudioDevices(java.lang.String);
+    method public java.util.ArrayList<java.lang.String> getAudioDevices(java.lang.String);
     method public int getMode();
     method public java.lang.String getParameters(java.lang.String);
     method public java.lang.String getProperty(java.lang.String);
@@ -10865,6 +10867,7 @@ package android.media {
     method public void registerMediaButtonEventReceiver(android.content.ComponentName);
     method public void registerRemoteControlClient(android.media.RemoteControlClient);
     method public int requestAudioFocus(android.media.AudioManager.OnAudioFocusChangeListener, int, int);
+    method public void setAudioDeviceActive(java.util.ArrayList<java.lang.String>, java.lang.String);
     method public deprecated void setBluetoothA2dpOn(boolean);
     method public void setBluetoothScoOn(boolean);
     method public void setMicrophoneMute(boolean);
@@ -10898,6 +10901,13 @@ package android.media {
     field public static final int AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK = -3; // 0xfffffffd
     field public static final int AUDIOFOCUS_REQUEST_FAILED = 0; // 0x0
     field public static final int AUDIOFOCUS_REQUEST_GRANTED = 1; // 0x1
+    field public static final java.lang.String AUDIO_INPUT_ACTIVE = "audio_devices_in_active";
+    field public static final java.lang.String AUDIO_INPUT_TYPE = "audio_devices_in";
+    field public static final java.lang.String AUDIO_NAME_CODEC = "AUDIO_CODEC";
+    field public static final java.lang.String AUDIO_NAME_HDMI = "AUDIO_HDMI";
+    field public static final java.lang.String AUDIO_NAME_SPDIF = "AUDIO_SPDIF";
+    field public static final java.lang.String AUDIO_OUTPUT_ACTIVE = "audio_devices_out_active";
+    field public static final java.lang.String AUDIO_OUTPUT_TYPE = "audio_devices_out";
     field public static final java.lang.String EXTRA_RINGER_MODE = "android.media.EXTRA_RINGER_MODE";
     field public static final java.lang.String EXTRA_SCO_AUDIO_PREVIOUS_STATE = "android.media.extra.SCO_AUDIO_PREVIOUS_STATE";
     field public static final java.lang.String EXTRA_SCO_AUDIO_STATE = "android.media.extra.SCO_AUDIO_STATE";
