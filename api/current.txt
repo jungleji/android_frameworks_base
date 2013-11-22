@@ -15931,9 +15931,11 @@ package android.os {
     field public static final java.lang.String BRAND;
     field public static final java.lang.String CPU_ABI;
     field public static final java.lang.String CPU_ABI2;
+    field public static final java.lang.String DEFAULT_FONTSCALE;
     field public static final java.lang.String DEVICE;
     field public static final java.lang.String DISPLAY;
     field public static final java.lang.String FINGERPRINT;
+    field public static final java.lang.String FIRMWARE;
     field public static final java.lang.String HARDWARE;
     field public static final java.lang.String HOST;
     field public static final java.lang.String ID;
@@ -15942,6 +15944,7 @@ package android.os {
     field public static final java.lang.String PRODUCT;
     field public static final deprecated java.lang.String RADIO;
     field public static final java.lang.String SERIAL;
+    field public static final java.lang.String TABLETUI;
     field public static final java.lang.String TAGS;
     field public static final long TIME;
     field public static final java.lang.String TYPE;
