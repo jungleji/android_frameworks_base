@@ -24537,9 +24537,11 @@ package android.view {
     field public static final int KEYCODE_ALT_LEFT = 57; // 0x39
     field public static final int KEYCODE_ALT_RIGHT = 58; // 0x3a
     field public static final int KEYCODE_APOSTROPHE = 75; // 0x4b
+    field public static final int KEYCODE_APPS = 10011; // 0x271b
     field public static final int KEYCODE_APP_SWITCH = 187; // 0xbb
     field public static final int KEYCODE_ASSIST = 219; // 0xdb
     field public static final int KEYCODE_AT = 77; // 0x4d
+    field public static final int KEYCODE_AUDIO = 10003; // 0x2713
     field public static final int KEYCODE_AVR_INPUT = 182; // 0xb6
     field public static final int KEYCODE_AVR_POWER = 181; // 0xb5
     field public static final int KEYCODE_B = 30; // 0x1e
@@ -24547,6 +24549,7 @@ package android.view {
     field public static final int KEYCODE_BACKSLASH = 73; // 0x49
     field public static final int KEYCODE_BOOKMARK = 174; // 0xae
     field public static final int KEYCODE_BREAK = 121; // 0x79
+    field public static final int KEYCODE_BROWSER = 10012; // 0x271c
     field public static final int KEYCODE_BUTTON_1 = 188; // 0xbc
     field public static final int KEYCODE_BUTTON_10 = 197; // 0xc5
     field public static final int KEYCODE_BUTTON_11 = 198; // 0xc6
@@ -24607,6 +24610,7 @@ package android.view {
     field public static final int KEYCODE_ENVELOPE = 65; // 0x41
     field public static final int KEYCODE_EQUALS = 70; // 0x46
     field public static final int KEYCODE_ESCAPE = 111; // 0x6f
+    field public static final int KEYCODE_EXPAND = 10008; // 0x2718
     field public static final int KEYCODE_EXPLORER = 64; // 0x40
     field public static final int KEYCODE_F = 34; // 0x22
     field public static final int KEYCODE_F1 = 131; // 0x83
@@ -24621,15 +24625,18 @@ package android.view {
     field public static final int KEYCODE_F7 = 137; // 0x89
     field public static final int KEYCODE_F8 = 138; // 0x8a
     field public static final int KEYCODE_F9 = 139; // 0x8b
+    field public static final int KEYCODE_FAVOURITE = 10006; // 0x2716
     field public static final int KEYCODE_FOCUS = 80; // 0x50
     field public static final int KEYCODE_FORWARD = 125; // 0x7d
     field public static final int KEYCODE_FORWARD_DEL = 112; // 0x70
     field public static final int KEYCODE_FUNCTION = 119; // 0x77
     field public static final int KEYCODE_G = 35; // 0x23
+    field public static final int KEYCODE_GOTO = 10001; // 0x2711
     field public static final int KEYCODE_GRAVE = 68; // 0x44
     field public static final int KEYCODE_GUIDE = 172; // 0xac
     field public static final int KEYCODE_H = 36; // 0x24
     field public static final int KEYCODE_HEADSETHOOK = 79; // 0x4f
+    field public static final int KEYCODE_HELP = 10005; // 0x2715
     field public static final int KEYCODE_HENKAN = 214; // 0xd6
     field public static final int KEYCODE_HOME = 3; // 0x3
     field public static final int KEYCODE_I = 37; // 0x25
@@ -24642,6 +24649,7 @@ package android.view {
     field public static final int KEYCODE_L = 40; // 0x28
     field public static final int KEYCODE_LANGUAGE_SWITCH = 204; // 0xcc
     field public static final int KEYCODE_LEFT_BRACKET = 71; // 0x47
+    field public static final int KEYCODE_LOOP = 10007; // 0x2717
     field public static final int KEYCODE_M = 41; // 0x29
     field public static final int KEYCODE_MANNER_MODE = 205; // 0xcd
     field public static final int KEYCODE_MEDIA_CLOSE = 128; // 0x80
@@ -24659,8 +24667,10 @@ package android.view {
     field public static final int KEYCODE_META_LEFT = 117; // 0x75
     field public static final int KEYCODE_META_RIGHT = 118; // 0x76
     field public static final int KEYCODE_MINUS = 69; // 0x45
+    field public static final int KEYCODE_MOUSE = 10009; // 0x2719
     field public static final int KEYCODE_MOVE_END = 123; // 0x7b
     field public static final int KEYCODE_MOVE_HOME = 122; // 0x7a
+    field public static final int KEYCODE_MOVIE = 10010; // 0x271a
     field public static final int KEYCODE_MUHENKAN = 213; // 0xd5
     field public static final int KEYCODE_MUSIC = 209; // 0xd1
     field public static final int KEYCODE_MUTE = 91; // 0x5b
@@ -24706,6 +24716,7 @@ package android.view {
     field public static final int KEYCODE_RIGHT_BRACKET = 72; // 0x48
     field public static final int KEYCODE_RO = 217; // 0xd9
     field public static final int KEYCODE_S = 47; // 0x2f
+    field public static final int KEYCODE_SCREENSHOT = 10013; // 0x271d
     field public static final int KEYCODE_SCROLL_LOCK = 116; // 0x74
     field public static final int KEYCODE_SEARCH = 84; // 0x54
     field public static final int KEYCODE_SEMICOLON = 74; // 0x4a
@@ -24719,6 +24730,7 @@ package android.view {
     field public static final int KEYCODE_STAR = 17; // 0x11
     field public static final int KEYCODE_STB_INPUT = 180; // 0xb4
     field public static final int KEYCODE_STB_POWER = 179; // 0xb3
+    field public static final int KEYCODE_SUBTITLE = 10002; // 0x2712
     field public static final int KEYCODE_SWITCH_CHARSET = 95; // 0x5f
     field public static final int KEYCODE_SYM = 63; // 0x3f
     field public static final int KEYCODE_SYSRQ = 120; // 0x78
@@ -24727,6 +24739,7 @@ package android.view {
     field public static final int KEYCODE_TV = 170; // 0xaa
     field public static final int KEYCODE_TV_INPUT = 178; // 0xb2
     field public static final int KEYCODE_TV_POWER = 177; // 0xb1
+    field public static final int KEYCODE_TV_SYSTEM = 10000; // 0x2710
     field public static final int KEYCODE_U = 49; // 0x31
     field public static final int KEYCODE_UNKNOWN = 0; // 0x0
     field public static final int KEYCODE_V = 50; // 0x32
@@ -24740,6 +24753,7 @@ package android.view {
     field public static final int KEYCODE_YEN = 216; // 0xd8
     field public static final int KEYCODE_Z = 54; // 0x36
     field public static final int KEYCODE_ZENKAKU_HANKAKU = 211; // 0xd3
+    field public static final int KEYCODE_ZOOM = 10004; // 0x2714
     field public static final int KEYCODE_ZOOM_IN = 168; // 0xa8
     field public static final int KEYCODE_ZOOM_OUT = 169; // 0xa9
     field public static final deprecated int MAX_KEYCODE = 84; // 0x54
