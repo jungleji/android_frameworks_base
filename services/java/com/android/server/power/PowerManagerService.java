@@ -59,6 +59,8 @@ import android.util.Log;
 import android.util.Slog;
 import android.util.TimeUtils;
 import android.view.WindowManagerPolicy;
+import android.view.DisplayManagerAw;
+import android.media.MediaPlayer;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
@@ -66,6 +68,8 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 
 import libcore.util.Objects;
+import com.softwinner.Gpio;
+import android.os.SystemProperties;
 
 /**
  * The power manager service is responsible for coordinating power management
@@ -273,6 +277,8 @@ public final class PowerManagerService extends IPowerManager.Stub
     // The current battery level percentage.
     private int mBatteryLevel;
 
+    private boolean mHdmiPlugged = false;
+
     // The battery level percentage at the time the dream started.
     // This is used to terminate a dream and go to sleep if the battery is
     // draining faster than it is charging and the user activity timeout has expired.
@@ -412,7 +418,7 @@ public final class PowerManagerService extends IPowerManager.Stub
         mHandlerThread = new HandlerThread(TAG);
         mHandlerThread.start();
         mHandler = new PowerManagerHandler(mHandlerThread.getLooper());
-
+        MediaPlayer.setHdmiState(false);
         Watchdog.getInstance().addMonitor(this);
 
         // Forcibly turn the screen on at boot so that it is in a known power state.
@@ -443,7 +449,7 @@ public final class PowerManagerService extends IPowerManager.Stub
             mScreenBrightnessSettingMaximum = pm.getMaximumScreenBrightnessSetting();
             mScreenBrightnessSettingDefault = pm.getDefaultScreenBrightnessSetting();
 
-            SensorManager sensorManager = new SystemSensorManager(mHandler.getLooper());
+            SensorManager sensorManager = new SystemSensorManager(mContext, mHandler.getLooper());
 
             // The notifier runs on the system server's main looper so as not to interfere
             // with the animations and other critical functions of the power manager.
@@ -469,6 +475,10 @@ public final class PowerManagerService extends IPowerManager.Stub
 
             // Register for broadcasts from other components of the system.
             IntentFilter filter = new IntentFilter();
+            filter.addAction(Intent.ACTION_HDMISTATUS_CHANGED);
+            mContext.registerReceiver(new HdmiPluggedReceiver(),filter);
+
+            filter = new IntentFilter();
             filter.addAction(Intent.ACTION_BATTERY_CHANGED);
             mContext.registerReceiver(new BatteryReceiver(), filter, null, mHandler);
 
@@ -993,6 +1003,9 @@ public final class PowerManagerService extends IPowerManager.Stub
             return false;
         }
 
+        /* when wake up, turn on the status led*/
+        chanceLedStatus(1);
+
         switch (mWakefulness) {
             case WAKEFULNESS_ASLEEP:
                 Slog.i(TAG, "Waking up from sleep...");
@@ -1046,6 +1059,12 @@ public final class PowerManagerService extends IPowerManager.Stub
         }
     }
 
+    private void chanceLedStatus(int status){
+        char portType = 'h';
+        int portNum = 20;
+        Gpio.writeGpio(portType, portNum, status);
+    }
+
     private boolean goToSleepNoUpdateLocked(long eventTime, int reason) {
         if (DEBUG_SPEW) {
             Slog.d(TAG, "goToSleepNoUpdateLocked: eventTime=" + eventTime + ", reason=" + reason);
@@ -1055,6 +1074,9 @@ public final class PowerManagerService extends IPowerManager.Stub
                 || !mBootCompleted || !mSystemReady) {
             return false;
         }
+
+        /* when go to sleep, turn off the status led*/
+        chanceLedStatus(0);
 
         switch (reason) {
             case PowerManager.GO_TO_SLEEP_REASON_DEVICE_ADMIN:
@@ -1452,6 +1474,13 @@ public final class PowerManagerService extends IPowerManager.Stub
         }
         if (mUserActivityTimeoutOverrideFromWindowManager >= 0) {
             timeout = (int)Math.min(timeout, mUserActivityTimeoutOverrideFromWindowManager);
+        }
+
+        /* negative number means stay on as long as possible */
+        boolean screenoffEnable = false;
+        screenoffEnable = SystemProperties.getBoolean("ro.sw.screenoffEnable", false);
+        if (timeout == -1 || !screenoffEnable){
+            timeout = mMaximumScreenOffTimeoutFromDeviceAdmin;
         }
         return Math.max(timeout, MINIMUM_SCREEN_OFF_TIMEOUT);
     }
@@ -2409,6 +2438,17 @@ public final class PowerManagerService extends IPowerManager.Stub
 
     private static WorkSource copyWorkSource(WorkSource workSource) {
         return workSource != null ? new WorkSource(workSource) : null;
+    }
+
+    private final class HdmiPluggedReceiver extends BroadcastReceiver{
+        @Override
+        public void onReceive(Context context, Intent intent){
+            synchronized(mLock) {
+                int wasPlugged = mHdmiPlugged?1:0;
+                mHdmiPlugged = intent.getIntExtra(DisplayManagerAw.EXTRA_HDMISTATUS, wasPlugged)>0?true:false;
+                MediaPlayer.setHdmiState(mHdmiPlugged);
+            }
+        }
     }
 
     private final class BatteryReceiver extends BroadcastReceiver {

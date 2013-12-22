@@ -50,6 +50,8 @@ import android.util.EventLog;
 import android.util.Log;
 import android.util.Slog;
 import android.view.WindowManager;
+import android.view.DisplayManagerAw;
+import android.os.DynamicPManager;
 
 import com.android.internal.os.BinderInternal;
 import com.android.internal.os.SamplingProfilerIntegration;
@@ -70,6 +72,7 @@ import com.android.server.power.PowerManagerService;
 import com.android.server.power.ShutdownThread;
 import com.android.server.usb.UsbService;
 import com.android.server.wm.WindowManagerService;
+import com.android.server.WifiDisplayManagerService;
 
 import dalvik.system.VMRuntime;
 import dalvik.system.Zygote;
@@ -80,10 +83,24 @@ import java.util.TimerTask;
 import com.stericsson.hardware.fm.FmReceiverService;
 import com.stericsson.hardware.fm.FmTransmitterService;
 
+import java.util.ArrayList;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import com.softwinner.SecureFile;
+
+/* init audio output channel */
+import android.media.AudioManager;
+import android.provider.Settings;
+import android.view.DispList;
+
 class ServerThread extends Thread {
     private static final String TAG = "SystemServer";
     private static final String ENCRYPTING_STATE = "trigger_restart_min_framework";
     private static final String ENCRYPTED_STATE = "1";
+
+    /* support the YPbPr */
+    private final boolean mDeviceHasYpbpr = false;
 
     ContentResolver mContentResolver;
 
@@ -146,6 +163,7 @@ class ServerThread extends Thread {
         ContentService contentService = null;
         LightsService lights = null;
         PowerManagerService power = null;
+        DynamicPManagerService dpm = null;
         DisplayManagerService display = null;
         DeviceHandlerService device = null;
         BatteryService battery = null;
@@ -316,6 +334,10 @@ class ServerThread extends Thread {
             battery = new BatteryService(context, lights, device);
             ServiceManager.addService("battery", battery);
 
+            Slog.i(TAG, "DynamicPManager");
+            dpm = new DynamicPManagerService(context);
+            ServiceManager.addService(DynamicPManager.DPM_SERVICE, dpm);
+
             Slog.i(TAG, "Vibrator Service");
             vibrator = new VibratorService(context);
             ServiceManager.addService("vibrator", vibrator);
@@ -343,6 +365,25 @@ class ServerThread extends Thread {
                     !firstBoot, onlyCore);
             ServiceManager.addService(Context.WINDOW_SERVICE, wm);
             ServiceManager.addService(Context.INPUT_SERVICE, inputManager);
+
+            if (SystemProperties.get("ro.display.switch").equals("1")) {
+                Slog.i(TAG, "Display Manager");
+                DisplayManagerServiceAw display_aw = new DisplayManagerServiceAw(context, power);
+                ServiceManager.addService(Context.DISPLAY_SERVICE_AW, display_aw);
+
+                try {
+                    display_aw.systemReady();
+                } catch (Throwable e) {
+                    Slog.e(TAG, "Failure starting AW Display Manager", e);
+                }
+            }
+
+            if (SystemProperties.get("ro.wifidisplay.switch").equals("1")) {
+                Slog.i(TAG, "Display Manager");
+                WifiDisplayManagerService wifidisplay = new WifiDisplayManagerService(context,
+                        power);
+                ServiceManager.addService(Context.WIFIDISPLAY_SERVICE, wifidisplay);
+            }
 
             ActivityManagerService.self().setWindowManager(wm);
 
@@ -712,6 +753,14 @@ class ServerThread extends Thread {
                         new WiredAccessoryManager(context, inputManager));
             } catch (Throwable e) {
                 reportWtf("starting WiredAccessoryManager", e);
+            }
+
+            try {
+                Slog.i(TAG, "Audio device manager Observer");
+                // Listen for wired headset changes
+                AudioDeviceManagerObserver.getInstance(context);
+            } catch (Throwable e) {
+                reportWtf("starting AudioDeviceManagerObserver", e);
             }
 
             try {
@@ -1116,6 +1165,171 @@ class ServerThread extends Thread {
             }
         });
 
+        /*
+         * Author : huanglong@allwinnertech.com
+         * Description : Initialize the DisplayManagerAw, to set the display area.
+         * Date : 2013-3-15
+         */
+        DisplayManagerAw displayManager = new DisplayManagerAw();
+        if (displayManager == null) {
+            Log.w(TAG, "Failed in creating DisplayManager.");
+
+            // init the display area
+            int ratio = getDispRatio();
+            Slog.i(TAG, "Display area ratio = " + ratio);
+            displayManager.setDisplayAreaPercent(0, ratio);
+        }
+
+        /* add by Gary. start {{----------------------------------- */
+        /* 2011-12-10 */
+        /* init display output */
+        boolean ypbprIsConnected = false;
+        boolean cvbsIsConnected = false;
+        boolean hdmiIsConnected = false;
+        DispList.DispFormat finalFormat = null;
+
+        // DisplayManager displayManager =
+        // (DisplayManager)context.getSystemService(Context.DISPLAY_SERVICE);
+        if (displayManager == null)
+            Log.w(TAG, "Fail in creating DisplayManager.");
+
+        /* check cable's connection status */
+        if (displayManager.getHdmiHotPlugStatus() != 0)
+            hdmiIsConnected = true;
+
+        int tvStatus = displayManager.getTvHotPlugStatus();
+        Log.d(TAG, "tv connect status = " + tvStatus);
+        if (tvStatus == DisplayManagerAw.DISPLAY_TVDAC_CVBS)
+            cvbsIsConnected = true;
+        else if (tvStatus == DisplayManagerAw.DISPLAY_TVDAC_YPBPR)
+            ypbprIsConnected = true;
+        else if (tvStatus == DisplayManagerAw.DISPLAY_TVDAC_ALL) {
+            cvbsIsConnected = true;
+            ypbprIsConnected = true;
+        }
+        Log.d(TAG, "HDMI connect status = " + hdmiIsConnected + ", av connnect status = "
+                + cvbsIsConnected + ", YPbPr connect status = " + ypbprIsConnected);
+
+        DispList.DispFormat savedFormat = null;
+        String savedFormatName = Settings.System.getString(context.getContentResolver(),
+                Settings.System.DISPLY_OUTPUT_FORMAT);
+        if (savedFormatName == null) {
+            Log.w(TAG, "Fail in getting saved display format.");
+            savedFormat = DispList.HDMI_DEFAULT_FORMAT;
+        } else {
+            savedFormat = DispList.ItemName2Code(savedFormatName);
+        }
+        Log.d(TAG, "saved display = " + DispList.ItemCode2Name(savedFormat));
+        int savedType = savedFormat.mOutputType;
+        DispList.DispFormat curFormat = new DispList.DispFormat(
+                displayManager.getDisplayOutputType(0),
+                displayManager.getDisplayOutputFormat(0));
+        Log.d(TAG, "current format is " + curFormat);
+
+        int savedIntType = DispList.getAdvancedDisplayType(savedFormat);
+        int finalIntType = DispList.ADVANCED_DISPLAY_TYPE_HDMI;
+        if (hdmiIsConnected && DispList.isHDMI(curFormat)) {
+            finalIntType = DispList.ADVANCED_DISPLAY_TYPE_HDMI;
+            finalFormat = curFormat;
+        } else if (cvbsIsConnected && DispList.isCVBS(curFormat)) {
+            finalIntType = DispList.ADVANCED_DISPLAY_TYPE_CVBS;
+            finalFormat = curFormat;
+        } else if (mDeviceHasYpbpr && ypbprIsConnected && DispList.isYPbPr(curFormat)) {
+            finalIntType = DispList.ADVANCED_DISPLAY_TYPE_YPBPR;
+            finalFormat = curFormat;
+        } else if (!mDeviceHasYpbpr && ypbprIsConnected && DispList.isVGA(curFormat)) {
+            finalIntType = DispList.ADVANCED_DISPLAY_TYPE_VGA;
+            finalFormat = DispList.VGA_DEFAULT_FORMAT;
+        } else if (hdmiIsConnected) {
+            finalIntType = DispList.ADVANCED_DISPLAY_TYPE_HDMI;
+            finalFormat = DispList.HDMI_DEFAULT_FORMAT;
+        } else if (cvbsIsConnected) {
+            finalIntType = DispList.ADVANCED_DISPLAY_TYPE_CVBS;
+            finalFormat = DispList.CVBS_DEFAULT_FORMAT;
+        } else if (mDeviceHasYpbpr && ypbprIsConnected) {
+            finalIntType = DispList.ADVANCED_DISPLAY_TYPE_YPBPR;
+            finalFormat = DispList.YPBPR_DEFAULT_FORMAT;
+        } else if (!mDeviceHasYpbpr && ypbprIsConnected){
+            finalIntType = DispList.ADVANCED_DISPLAY_TYPE_VGA;
+            finalFormat = DispList.VGA_DEFAULT_FORMAT;
+        } else {
+            finalIntType = savedIntType;
+            finalFormat = savedFormat;
+        }
+
+        if (finalIntType == savedIntType)
+            finalFormat = savedFormat;
+
+        if (finalFormat.mOutputType == DisplayManagerAw.DISPLAY_OUTPUT_TYPE_HDMI) {
+            boolean isSupport = (displayManager.isSupportHdmiMode(finalFormat.mFormat) != 0);
+            if (!isSupport) {
+                Log.d(TAG, "HDMI mode " + DispList.ItemCode2Name(finalFormat)
+                        + " is NOT supported by the TV.");
+                finalFormat = DispList.HDMI_DEFAULT_FORMAT;
+            }
+        }
+        Log.d(TAG, "final format is " + DispList.ItemCode2Name(finalFormat));
+
+        final String srcPath = "/data/displaysetmode";
+        final File FILE = new File(srcPath);
+        final String values = new String(finalFormat.mOutputType + "\n" + finalFormat.mFormat);
+        try {
+            FileOutputStream fos = new FileOutputStream(FILE);
+            fos.write(values.getBytes());
+            fos.flush();
+            fos.getFD().sync();
+            fos.close();
+        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
+        }
+
+        Settings.System.putString(context.getContentResolver(),
+                Settings.System.DISPLY_OUTPUT_FORMAT,
+                DispList.ItemCode2Name(finalFormat));
+
+        AudioManager audioManager = new AudioManager(context);
+        if(audioManager == null){
+            Log.e(TAG, "audioManager is null");
+        }else {
+            /* modified by chenjd,chenjd@allwinnertech.com,20120710, start {{--------
+            * init audio output mode,may be multi channels */
+            String audioOutputChannelName = Settings.System.getString(context.getContentResolver(),
+                Settings.System.AUDIO_OUTPUT_CHANNEL);
+            if(audioOutputChannelName == null) {
+                audioOutputChannelName = AudioManager.AUDIO_NAME_CODEC;
+                Log.d(TAG,"use default audio output channel:" + audioOutputChannelName);
+            }
+            Log.d(TAG, "saved audio channel is " + audioOutputChannelName);
+            ArrayList<String> audioOutputChannels = new ArrayList<String>();
+            String[] audioList = audioOutputChannelName.split(",");
+            for(String audio:audioList){
+                if(!"".equals(audio)){
+                    audioOutputChannels.add(audio);
+                }
+            }
+            Log.d(TAG, "active the saved audio channels " + audioOutputChannels);
+            ArrayList<String> activedChannels = new ArrayList<String>();
+            if(audioOutputChannels.contains(AudioManager.AUDIO_NAME_SPDIF)){
+                activedChannels.add(AudioManager.AUDIO_NAME_SPDIF);
+            }else if(finalFormat.mOutputType == DisplayManagerAw.DISPLAY_OUTPUT_TYPE_HDMI){
+                activedChannels.add(AudioManager.AUDIO_NAME_HDMI);
+            }else{
+                activedChannels.add(AudioManager.AUDIO_NAME_CODEC);
+            }
+            audioManager.setAudioDeviceActive(activedChannels,AudioManager.AUDIO_OUTPUT_ACTIVE);
+            /* record the audio output channel */
+            String st = null;
+            for(int i = 0; i < audioOutputChannels.size(); i++){
+                if(st == null){
+                    st = audioOutputChannels.get(i);
+                }else{
+                    st = st + "," + audioOutputChannels.get(i);
+                }
+            }
+            Settings.System.putString(context.getContentResolver(), Settings.System.AUDIO_OUTPUT_CHANNEL,st);
+            Log.d(TAG,"audio channels change to {" + st + "}");
+        }
+
         // For debug builds, log event loop stalls to dropbox for analysis.
         if (StrictMode.conditionallyEnableDebugLogging()) {
             Slog.i(TAG, "Enabled StrictMode for system server main thread.");
@@ -1131,6 +1345,28 @@ class ServerThread extends Thread {
                     "com.android.systemui.SystemUIService"));
         //Slog.d(TAG, "Starting service: " + intent);
         context.startServiceAsUser(intent, UserHandle.OWNER);
+    }
+
+    private int getDispRatio() {
+        int defaultRatio = 95;
+        int maxRatio = 100;
+        String DISPLAY_AREA_RADIO = "display.area_radio";
+        SecureFile file = new SecureFile(DISPLAY_AREA_RADIO);
+        if (!file.exists())
+        {
+            return defaultRatio;
+        }
+        byte[] ret = new byte[255];
+        file.read(ret);
+        String st = new String(ret).substring(0, 2);
+        int retInt = defaultRatio;
+        try {
+            retInt = Integer.valueOf(st).intValue();
+            if (retInt == 10)
+                retInt = maxRatio;
+        } catch (Exception e) {
+        }
+        return retInt;
     }
 }
 

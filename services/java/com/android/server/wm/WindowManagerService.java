@@ -582,9 +582,12 @@ public class WindowManagerService extends IWindowManager.Stub
 
     PowerManagerService mPowerManager;
 
-    float mWindowAnimationScale = 1.0f;
-    float mTransitionAnimationScale = 1.0f;
-    float mAnimatorDurationScale = 1.0f;
+    // float mWindowAnimationScale = 1.0f;
+    // float mTransitionAnimationScale = 1.0f;
+    // float mAnimatorDurationScale = 1.0f;
+    float mWindowAnimationScale = 0.5f;
+    float mTransitionAnimationScale = 0.5f;
+    float mAnimatorDurationScale = 0.5f;
 
     final InputManagerService mInputManager;
     final DisplayManagerService mDisplayManagerService;
@@ -4060,6 +4063,7 @@ public class WindowManagerService extends IWindowManager.Stub
         if (req == ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED) {
             req = getOrientationFromAppTokensLocked();
         }
+        req = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
         return req;
     }
 
@@ -5652,7 +5656,7 @@ public class WindowManagerService extends IWindowManager.Stub
                 if (!mSystemBooted && !haveBootMsg) {
                     return;
                 }
-    
+
                 // If we are turning on the screen after the boot is completed
                 // normally, don't do so until we have the application and
                 // wallpaper.
@@ -5802,7 +5806,7 @@ public class WindowManagerService extends IWindowManager.Stub
      * Takes a snapshot of the screen.  In landscape mode this grabs the whole screen.
      * In portrait mode, it grabs the upper region of the screen based on the vertical dimension
      * of the target image.
-     * 
+     *
      * @param displayId the Display to take a screenshot of.
      * @param width the width of the target bitmap
      * @param height the height of the target bitmap
@@ -5916,6 +5920,11 @@ public class WindowManagerService extends IWindowManager.Stub
             rot = getDefaultDisplayContentLocked().getDisplay().getRotation();
             // Allow for abnormal hardware orientation
             rot = (rot + (android.os.SystemProperties.getInt("ro.sf.hwrotation",0) / 90 )) % 4;
+
+            if(SystemProperties.getInt("ro.sf.hwrotation",0)==270)
+                {
+                    rot =( rot+3)%4;
+		}
 
             int fw = frame.width();
             int fh = frame.height();
@@ -6071,6 +6080,14 @@ public class WindowManagerService extends IWindowManager.Stub
         }
 
         if (changed || alwaysSendConfiguration) {
+            try{
+                if(alwaysSendConfiguration == false){
+                    Intent intent = new Intent("android.window.action.ROTATION");
+                    intent.addFlags(Intent.FLAG_RECEIVER_REPLACE_PENDING);
+                    mContext.sendStickyBroadcast(intent);
+                }
+            }catch(Exception e){
+            }
             sendNewConfiguration();
         }
 
@@ -6418,14 +6435,25 @@ public class WindowManagerService extends IWindowManager.Stub
 
         // Any uncaught exception will crash the system process
         try {
+            int focus_hashcode = System.identityHashCode( mCurrentFocus );
+            int hashcode;
+
             OutputStream clientStream = client.getOutputStream();
             out = new BufferedWriter(new OutputStreamWriter(clientStream), 8 * 1024);
 
             final int count = windows.size();
             for (int i = 0; i < count; i++) {
                 final WindowState w = windows.get(i);
-                out.write(Integer.toHexString(System.identityHashCode(w)));
+
+                hashcode = System.identityHashCode(w);
+
+                out.write(Integer.toHexString( hashcode ));
                 out.write(' ');
+                if ( hashcode == focus_hashcode )
+                    {
+                        out.write('$');
+                    }
+
                 out.append(w.mAttrs.getTitle());
                 out.write('\n');
             }
@@ -7086,7 +7114,16 @@ public class WindowManagerService extends IWindowManager.Stub
             }
             if (hardKeyboardAvailable != mHardKeyboardAvailable) {
                 mHardKeyboardAvailable = hardKeyboardAvailable;
-                mHardKeyboardEnabled = hardKeyboardAvailable;
+                Log.d(TAG,"--------------ro.sw.hidesoftkbwhenhardkbin");
+                if (SystemProperties.get("ro.sw.hidesoftkbwhenhardkbin").equals("1"))
+                {
+                    mHardKeyboardEnabled = hardKeyboardAvailable;
+                }
+                else
+                {
+                    mHardKeyboardEnabled = false;
+                }
+
                 mH.removeMessages(H.REPORT_HARD_KEYBOARD_STATUS_CHANGE);
                 mH.sendEmptyMessage(H.REPORT_HARD_KEYBOARD_STATUS_CHANGE);
             }
@@ -7204,7 +7241,7 @@ public class WindowManagerService extends IWindowManager.Stub
     // -------------------------------------------------------------
     // Input Events and Focus Management
     // -------------------------------------------------------------
-    
+
     final InputMonitor mInputMonitor = new InputMonitor(this);
     private boolean mEventDispatchingEnabled;
 
@@ -8372,7 +8409,7 @@ public class WindowManagerService extends IWindowManager.Stub
             // applications.  Don't do any window layout until we have it.
             return;
         }
-        
+
         if (!mDisplayReady) {
             // Not yet initialized, nothing to do.
             return;
@@ -8381,7 +8418,7 @@ public class WindowManagerService extends IWindowManager.Stub
         Trace.traceBegin(Trace.TRACE_TAG_WINDOW_MANAGER, "wmLayout");
         mInLayout = true;
         boolean recoveringMemory = false;
-        
+
         try {
             if (mForceRemoves != null) {
                 recoveringMemory = true;
@@ -8595,7 +8632,7 @@ public class WindowManagerService extends IWindowManager.Stub
                 attachedBehindDream = behindDream;
             }
         }
-        
+
         // Window frames may have changed.  Tell the input dispatcher about it.
         mInputMonitor.setUpdateInputWindowsNeededLw();
         if (updateInputWindows) {
@@ -10111,7 +10148,7 @@ public class WindowManagerService extends IWindowManager.Stub
         }
         return false;
     }
-    
+
     private void finishUpdateFocusedWindowAfterAssignLayersLocked(boolean updateInputWindows) {
         mInputMonitor.setInputFocusLw(mCurrentFocus, updateInputWindows);
     }
@@ -10265,7 +10302,7 @@ public class WindowManagerService extends IWindowManager.Stub
                 + ", mClientFreezingScreen=" + mClientFreezingScreen);
             return;
         }
-        
+
         mDisplayFrozen = false;
         mH.removeMessages(H.APP_FREEZE_TIMEOUT);
         mH.removeMessages(H.CLIENT_FREEZE_TIMEOUT);
@@ -10306,7 +10343,7 @@ public class WindowManagerService extends IWindowManager.Stub
         mInputMonitor.thawInputDispatchingLw();
 
         boolean configChanged;
-        
+
         // While the display is frozen we don't re-compute the orientation
         // to avoid inconsistent states.  However, something interesting
         // could have actually changed during that time so re-evaluate it
@@ -10323,12 +10360,12 @@ public class WindowManagerService extends IWindowManager.Stub
                 2000);
 
         mScreenFrozenLock.release();
-        
+
         if (updateRotation) {
             if (DEBUG_ORIENTATION) Slog.d(TAG, "Performing post-rotate rotation");
             configChanged |= updateRotationUncheckedLocked(false);
         }
-        
+
         if (configChanged) {
             mH.sendEmptyMessage(H.SEND_NEW_CONFIGURATION);
         }
@@ -10427,7 +10464,7 @@ public class WindowManagerService extends IWindowManager.Stub
             }
         }
     }
- 
+
     @Override
     public void reevaluateStatusBarVisibility() {
         synchronized (mWindowMap) {
@@ -10492,7 +10529,7 @@ public class WindowManagerService extends IWindowManager.Stub
     public void lockNow(Bundle options) {
         mPolicy.lockNow(options);
     }
-    
+
     public boolean isSafeModeEnabled() {
         return mSafeMode;
     }
@@ -10529,6 +10566,31 @@ public class WindowManagerService extends IWindowManager.Stub
         }
 
         Binder.restoreCallingIdentity(origId);
+    }
+
+    public void keyEnterMouseMode()
+    {
+        mInputManager.KeyEnterMouseMode();
+    }
+
+    public void keyExitMouseMode()
+    {
+        mInputManager.KeyExitMouseMode();
+    }
+
+    public void keySetMouseMoveCode(int left,int right,int top,int bottom)
+    {
+        mInputManager.KeySetMouseMoveCode(left,right,top,bottom);
+    }
+
+    public void keySetMouseBtnCode(int leftbtn,int midbtn,int rightbtn)
+    {
+        mInputManager.KeySetMouseBtnCode(leftbtn,midbtn,rightbtn);
+    }
+
+    public void keySetMouseDistance(int distance)
+    {
+        mInputManager.KeySetMouseDistance(distance);
     }
 
     void dumpPolicyLocked(PrintWriter pw, String[] args, boolean dumpAll) {
@@ -10928,6 +10990,12 @@ public class WindowManagerService extends IWindowManager.Stub
             }
             // XXX also need to print mDimParams and mAppWindowAnimParams.  I am lazy.
         }
+    }
+
+    //reset resetInputCalibration
+    public void resetInputCalibration()
+    {
+        mInputManager.resetTouchCalibration();
     }
 
     boolean dumpWindows(PrintWriter pw, String name, String[] args,

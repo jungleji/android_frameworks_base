@@ -2514,7 +2514,7 @@ public class MediaPlayer
      * switch another subtitle to show.
      * <p>
      * 
-     * @param index the subtitle’s index in the subtitle list?
+     * @param index the subtitles index in the subtitle list?
      * @return ==0 means successful, !=0 means failed.
      */
     public native int switchSub(int index);
@@ -2547,41 +2547,41 @@ public class MediaPlayer
     }
     
     /**
-     * Set the subtitle’s color.
+     * Set the subtitles color.
      * <p>
      * 
-     * @param color  subtitle’s color.
+     * @param color  subtitles color.
      * @return ==0 means successful, !=0 means failed.
      */
     public native int setSubColor(int color); 
     
     /**
-     * Get the subtitle’s color.
+     * Get the subtitles color.
      * <p>
      * 
-     * @return the subtitle’s color.
+     * @return the subtitles color.
      */
     public native int getSubColor(); 
     
     /**
-     * Set the subtitle frame’s color.
+     * Set the subtitle frames color.
      * <p>
      * 
-     * @param color  subtitle frame’s color.
+     * @param color  subtitle frames color.
      * @return ==0 means successful, !=0 means failed.
      */
     public native int setSubFrameColor(int color); 
     
     /**
-     * Get the subtitle frame’s color.
+     * Get the subtitle frames color.
      * <p>
      * 
-     * @return the subtitle frame’s color.
+     * @return the subtitle frames color.
      */
     public native int getSubFrameColor();
     
     /**
-     * Set the subtitle’s font size.
+     * Set the subtitles font size.
      * <p>
      * 
      * @param size  font size in pixel.
@@ -2590,15 +2590,15 @@ public class MediaPlayer
     public native int setSubFontSize(int size); 
     
     /**
-     * Get the subtitle’s font size.
+     * Get the subtitles font size.
      * <p>
      * 
-     * @return the subtitle’s font size. <0 means failed.
+     * @return the subtitles font size. <0 means failed.
      */
     public native int getSubFontSize(); 
     
     /**
-     * Set the subtitle’s charset. If the underlying mediaplayer can absolutely parse the charset 
+     * Set the subtitles charset. If the underlying mediaplayer can absolutely parse the charset 
      * of the subtitles, still use the parsed charset; otherwise, use the charset argument.
      * <p>
      * 
@@ -2608,7 +2608,7 @@ public class MediaPlayer
     public native int setSubCharset(String charset);
     
     /**
-    * Get the subtitle’s charset.
+    * Get the subtitles charset.
     * <p>
     * 
     * @return the canonical name of a charset.
@@ -2616,7 +2616,7 @@ public class MediaPlayer
     public native String getSubCharset(); 
     
     /**
-     * Set the subtitle’s position vertically in the screen.
+     * Set the subtitles position vertically in the screen.
      * <p>
      * 
      * @param percent  ????????????????????????????????,???,10%,?????10.
@@ -2625,7 +2625,7 @@ public class MediaPlayer
     public native int setSubPosition(int percent); 
     
     /**
-     * Get the subtitle’s position vertically in the screen.
+     * Get the subtitles position vertically in the screen.
      * <p>
      * 
      * @return percent  ????????????????????????????????,???,10%,????10.
@@ -2633,7 +2633,7 @@ public class MediaPlayer
     public native int getSubPosition(); 
     
     /**
-     * Set the subtitle’s delay time.
+     * Set the subtitles delay time.
      * <p>
      * 
      * @param time delay time in milliseconds. It can be <0.
@@ -2642,7 +2642,7 @@ public class MediaPlayer
     public native int setSubDelay(int time); 
     
     /**
-     * Get the subtitle’s delay time.
+     * Get the subtitles delay time.
      * <p>
      * 
      * @return delay time in milliseconds.
@@ -2678,7 +2678,7 @@ public class MediaPlayer
      * switch another track to play.
      * <p>
      * 
-     * @param index the track’s index in the track list?
+     * @param index the tracks index in the track list?
      * @return ==0 means successful, !=0 means failed.
      */
     public native int switchTrack(int index);

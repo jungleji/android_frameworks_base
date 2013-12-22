@@ -116,6 +116,7 @@ import android.accounts.AccountManager;
 import android.accounts.IAccountManager;
 import android.app.admin.DevicePolicyManager;
 import com.android.internal.os.IDropBoxManagerService;
+import android.view.DisplayManagerAw;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -464,7 +465,8 @@ class ContextImpl extends Context {
 
         registerService(SENSOR_SERVICE, new ServiceFetcher() {
                 public Object createService(ContextImpl ctx) {
-                    return new SystemSensorManager(ctx.mMainThread.getHandler().getLooper());
+                    // return new SystemSensorManager(ctx.mMainThread.getHandler().getLooper());
+                    return new SystemSensorManager(ctx.getOuterContext(),ctx.mMainThread.getHandler().getLooper());
                 }});
 
         registerService(STATUS_BAR_SERVICE, new ServiceFetcher() {
@@ -529,6 +531,11 @@ class ContextImpl extends Context {
                     IBinder b = ServiceManager.getService(WIFI_P2P_SERVICE);
                     IWifiP2pManager service = IWifiP2pManager.Stub.asInterface(b);
                     return new WifiP2pManager(service);
+                }});
+
+        registerService(DISPLAY_SERVICE_AW, new ServiceFetcher() {
+                public Object createService(ContextImpl ctx) {
+                    return new DisplayManagerAw();
                 }});
 
         registerService(WINDOW_SERVICE, new ServiceFetcher() {

@@ -363,14 +363,14 @@ final class WiredAccessoryManager implements WiredAccessoryCallbacks {
             UEventInfo uei;
 
             // Monitor h2w
-            if (!mUseDevInputEventForAudioJack) {
-                uei = new UEventInfo(NAME_H2W, BIT_HEADSET, BIT_HEADSET_NO_MIC);
-                if (uei.checkSwitchExists()) {
-                    retVal.add(uei);
-                } else {
-                    Slog.w(TAG, "This kernel does not have wired headset support");
-                }
-            }
+            // if (!mUseDevInputEventForAudioJack) {
+            //     uei = new UEventInfo(NAME_H2W, BIT_HEADSET, BIT_HEADSET_NO_MIC);
+            //     if (uei.checkSwitchExists()) {
+            //         retVal.add(uei);
+            //     } else {
+            //         Slog.w(TAG, "This kernel does not have wired headset support");
+            //     }
+            // }
 
             // Monitor USB
             uei = new UEventInfo(NAME_USB_AUDIO, BIT_USB_HEADSET_ANLG, BIT_USB_HEADSET_DGTL);

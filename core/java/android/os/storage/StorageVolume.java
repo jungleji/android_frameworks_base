@@ -102,8 +102,15 @@ public class StorageVolume implements Parcelable {
      *
      * @return the volume description
      */
-    public String getDescription(Context context) {
-        return context.getResources().getString(mDescriptionId);
+    public String getDescription(Context context)
+    {
+        String temp;
+        try {
+            temp = context.getResources().getString(mDescriptionId);
+        } catch(Exception nfe) {
+            return null;
+        }
+        return temp;
     }
 
     public int getDescriptionId() {

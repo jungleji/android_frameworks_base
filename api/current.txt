@@ -9715,6 +9715,7 @@ package android.hardware {
     method public static void getCameraInfo(int, android.hardware.Camera.CameraInfo);
     method public static int getNumberOfCameras();
     method public android.hardware.Camera.Parameters getParameters();
+    method public static boolean isPlayingCamera();
     method public final void lock();
     method public static android.hardware.Camera open(int);
     method public static android.hardware.Camera open();
@@ -10002,6 +10003,7 @@ package android.hardware {
 
   public class SensorEvent {
     field public int accuracy;
+    field public final float[] originalValue;
     field public android.hardware.Sensor sensor;
     field public long timestamp;
     field public final float[] values;

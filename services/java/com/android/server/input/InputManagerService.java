@@ -89,6 +89,7 @@ import java.util.HashSet;
 
 import libcore.io.Streams;
 import libcore.util.Objects;
+import android.os.SystemProperties;
 
 /*
  * Wraps the C++ InputManager and provides its callbacks.
@@ -188,8 +189,14 @@ public class InputManagerService extends IInputManager.Stub
     private static native void nativeCancelVibrate(int ptr, int deviceId, int token);
     private static native void nativeReloadKeyboardLayouts(int ptr);
     private static native void nativeReloadDeviceAliases(int ptr);
+    private static native void nativeKeyEnterMouseMode(int ptr);
+    private static native void nativeKeyExitMouseMode(int ptr);
+    private static native void nativeKeySetMouseDistance(int ptr,int distance);
+    private static native void nativeKeySetMouseMoveCode(int ptr,int left,int right,int top,int bottom);
+    private static native void nativeKeySetMouseBtnCode(int ptr,int leftbtn,int midbtn,int rightbtn);
     private static native String nativeDump(int ptr);
     private static native void nativeMonitor(int ptr);
+    private static native void nativeResetTouchCalibration(int ptr);
 
     // Input event injection constants defined in InputDispatcher.h.
     private static final int INPUT_EVENT_INJECTION_SUCCEEDED = 0;
@@ -351,6 +358,11 @@ public class InputManagerService extends IInputManager.Stub
     }
 
     private void setDisplayViewport(boolean external, DisplayViewport viewport) {
+        if(SystemProperties.getInt("ro.sf.hwrotation",0)==270)
+            {
+                viewport.orientation =(viewport.orientation + 3)%4;
+            }
+
         nativeSetDisplayViewport(mPtr, external,
                 viewport.displayId, viewport.orientation,
                 viewport.logicalFrame.left, viewport.logicalFrame.top,
@@ -1222,6 +1234,31 @@ public class InputManagerService extends IInputManager.Stub
         nativeSetShowTouches(mPtr, setting != 0);
     }
 
+    public void KeyEnterMouseMode()
+    {
+        nativeKeyEnterMouseMode(mPtr);
+    }
+
+    public void KeyExitMouseMode()
+    {
+        nativeKeyExitMouseMode(mPtr);
+    }
+
+    public void KeySetMouseDistance(int distance)
+    {
+        nativeKeySetMouseDistance(mPtr,distance);
+    }
+
+    public void KeySetMouseMoveCode(int left,int right,int top,int bottom)
+    {
+        nativeKeySetMouseMoveCode(mPtr,left,right,top,bottom);
+    }
+
+    public void KeySetMouseBtnCode(int leftbtn,int midbtn,int rightbtn)
+    {
+        nativeKeySetMouseBtnCode(mPtr,leftbtn,midbtn,rightbtn);
+    }
+
     private void registerShowTouchesSettingObserver() {
         mContext.getContentResolver().registerContentObserver(
                 Settings.System.getUriFor(Settings.System.SHOW_TOUCHES), true,
@@ -1341,6 +1378,12 @@ public class InputManagerService extends IInputManager.Stub
     public void monitor() {
         synchronized (mInputFilterLock) { }
         nativeMonitor(mPtr);
+    }
+
+    //reset touch calibration
+    public void resetTouchCalibration()
+    {
+        nativeResetTouchCalibration(mPtr);
     }
 
     // Native callback.

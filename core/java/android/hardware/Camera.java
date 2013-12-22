@@ -1523,6 +1523,14 @@ public class Camera {
     }
 
     /**
+    * checking if the camera is opened.
+    *
+    * @return true if the camera is opened.
+    *
+    */
+    public static native boolean  isPlayingCamera();
+
+    /**
      * Image size (width and height dimensions).
      */
     public class Size {
