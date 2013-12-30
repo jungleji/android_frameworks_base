@@ -51,6 +51,7 @@
 #include <errno.h>
 #include <limits.h>
 #include <math.h>
+#include <cutils/properties.h>
 
 #define INDENT "  "
 #define INDENT2 "    "
@@ -170,9 +171,9 @@ static inline bool sourcesMatchMask(uint32_t sources, uint32_t sourceMask) {
 // Returns true if the pointer should be reported as being down given the specified
 // button states.  This determines whether the event is reported as a touch event.
 static bool isPointerDown(int32_t buttonState) {
-    return buttonState &
-            (AMOTION_EVENT_BUTTON_PRIMARY | AMOTION_EVENT_BUTTON_SECONDARY
-                    | AMOTION_EVENT_BUTTON_TERTIARY);
+    return buttonState & AMOTION_EVENT_BUTTON_PRIMARY;
+            // (AMOTION_EVENT_BUTTON_PRIMARY | AMOTION_EVENT_BUTTON_SECONDARY
+            //         | AMOTION_EVENT_BUTTON_TERTIARY);
 }
 
 static float calculateCommonVector(float a, float b) {
@@ -209,10 +210,14 @@ static void synthesizeButtonKeys(InputReaderContext* context, int32_t action,
             lastButtonState, currentButtonState,
             AMOTION_EVENT_BUTTON_BACK, AKEYCODE_BACK);
     synthesizeButtonKey(context, action, when, deviceId, source, policyFlags,
+                        lastButtonState, currentButtonState,
+                        AMOTION_EVENT_BUTTON_TERTIARY, AKEYCODE_MENU);
+    synthesizeButtonKey(context, action, when, deviceId, source, policyFlags,
             lastButtonState, currentButtonState,
             AMOTION_EVENT_BUTTON_FORWARD, AKEYCODE_FORWARD);
 }
 
+static bool resetTouch = false;
 
 // --- InputReaderConfiguration ---
 
@@ -244,6 +249,26 @@ InputReader::InputReader(const sp<EventHubInterface>& eventHub,
 
     { // acquire lock
         AutoMutex _l(mLock);
+
+        mKeySynced = true;
+        mKeyInMouseMode =false;
+        mKeySynced  = true;
+        mDistance   = 10;
+        mKeyDeviceId = 0;
+        mVirtualMouseCreated = false;
+        mMouseDeviceId = 0x0fff0fff;
+        mTouchDeviceId = 0x0fff0ffe;
+        mVirtualTouchCreated = false;
+        for(int i= 0;i < MAX_MOUSE_SIZE;i++)
+        {
+            mRealMouseDeviceId[i] = -1;
+        }
+
+        mRealTouchDeviceId = -1;
+        mLeft = 0;
+        mRight = 0;
+        mTop = 0;
+        mBottom = 0;
 
         refreshConfigurationLocked(0);
         updateGlobalMetaStateLocked();
@@ -321,40 +346,85 @@ void InputReader::loopOnce() {
 }
 
 void InputReader::processEventsLocked(const RawEvent* rawEvents, size_t count) {
-    for (const RawEvent* rawEvent = rawEvents; count;) {
+
+    for (const RawEvent* rawEvent = rawEvents; count;)
+    {
         int32_t type = rawEvent->type;
         size_t batchSize = 1;
-        if (type < EventHubInterface::FIRST_SYNTHETIC_EVENT) {
-            int32_t deviceId = rawEvent->deviceId;
-            while (batchSize < count) {
-                if (rawEvent[batchSize].type >= EventHubInterface::FIRST_SYNTHETIC_EVENT
-                        || rawEvent[batchSize].deviceId != deviceId) {
+         if (type < EventHubInterface::FIRST_SYNTHETIC_EVENT) {
+             int32_t deviceId = rawEvent->deviceId;
+             while (batchSize < count) {
+                if (rawEvent[batchSize].type >= EventHubInterface::FIRST_SYNTHETIC_EVENT|| rawEvent[batchSize].deviceId != deviceId) {
                     break;
                 }
+
                 batchSize += 1;
             }
 #if DEBUG_RAW_EVENTS
             ALOGD("BatchSize: %d Count: %d", batchSize, count);
 #endif
-            processEventsForDeviceLocked(deviceId, rawEvent, batchSize);
+            convertEvent(rawEvent,batchSize);
+            if(batchSize > 0) {
+                int32_t convertdeviceId = mConvertEventBuffer[0].deviceId;
+                processEventsForDeviceLocked(convertdeviceId, mConvertEventBuffer, batchSize);
+            }
         } else {
             switch (rawEvent->type) {
             case EventHubInterface::DEVICE_ADDED:
                 addDeviceLocked(rawEvent->when, rawEvent->deviceId);
                 break;
+
             case EventHubInterface::DEVICE_REMOVED:
                 removeDeviceLocked(rawEvent->when, rawEvent->deviceId);
                 break;
+
             case EventHubInterface::FINISHED_DEVICE_SCAN:
                 handleConfigurationChangedLocked(rawEvent->when);
                 break;
+
             default:
                 ALOG_ASSERT(false); // can't happen
                 break;
             }
-        }
-        count -= batchSize;
-        rawEvent += batchSize;
+         }
+
+         count -= batchSize;
+         rawEvent += batchSize;
+    }
+}
+
+InputDevice* InputReader::createVirtualMouse(const InputDeviceIdentifier& identifier,uint32_t classes)
+{
+    InputDevice* device = new InputDevice(&mContext, mMouseDeviceId, bumpGenerationLocked(),identifier,classes);        // External devices.
+    if (classes & INPUT_DEVICE_CLASS_EXTERNAL)
+        {
+            device->setExternal(true);
+        }    // Mouse-like devices.
+    device->addMapper(new CursorInputMapper(device));
+
+    return device;
+}
+
+void InputReader::addVirtualMouseDevice(const InputDeviceIdentifier& identifier,nsecs_t when,uint32_t classes)
+{
+    InputDevice* device = createVirtualMouse(identifier,classes);
+    device->configure(when, &mConfig, 0);
+    device->reset(when);
+    if (device->isIgnored()){
+        ALOGI("Device added: id=0x%x", mMouseDeviceId);
+    } else {
+        ALOGI("Device added: id=0x%x,sources=%08x", mMouseDeviceId,
+              device->getSources());
+    }
+
+    ssize_t deviceIndex = mDevices.indexOfKey(mMouseDeviceId);
+    if (deviceIndex < 0){
+        mDevices.add(mMouseDeviceId, device);
+    } else {
+        ALOGW("Ignoring spurious device added event for deviceId %d.", mMouseDeviceId);
+
+        delete device;
+        return;
     }
 }
 
@@ -367,6 +437,25 @@ void InputReader::addDeviceLocked(nsecs_t when, int32_t deviceId) {
 
     InputDeviceIdentifier identifier = mEventHub->getDeviceIdentifier(deviceId);
     uint32_t classes = mEventHub->getDeviceClasses(deviceId);
+
+    if(mVirtualMouseCreated == false){
+        addVirtualMouseDevice(identifier,when,INPUT_DEVICE_CLASS_CURSOR | INPUT_DEVICE_CLASS_EXTERNAL);
+        mVirtualMouseCreated = true;
+    }
+
+    if (classes & INPUT_DEVICE_CLASS_CURSOR){
+        for(int i= 0;i < MAX_MOUSE_SIZE;i++){
+            if(mRealMouseDeviceId[i] == -1){
+                mRealMouseDeviceId[i] = deviceId;
+                break;
+            }
+        }
+    }
+
+    if(mVirtualTouchCreated == false){
+        addVirtualTouchDevice(identifier,when,classes);
+        mVirtualTouchCreated = true;
+    }
 
     InputDevice* device = createDeviceLocked(deviceId, identifier, classes);
     device->configure(when, &mConfig, 0);
@@ -384,12 +473,64 @@ void InputReader::addDeviceLocked(nsecs_t when, int32_t deviceId) {
     bumpGenerationLocked();
 }
 
+void InputReader::keyEnterMouseMode(){
+    ALOGW("Enter mouse mode!");
+    mKeyInMouseMode = true;
+    ssize_t deviceIndex = mDevices.indexOfKey(mMouseDeviceId);
+    if (deviceIndex < 0){
+        ALOGW("Discarding event for unknown deviceId %d.", mMouseDeviceId);
+        return;
+    }
+    InputDevice* device = mDevices.valueAt(deviceIndex);
+    if (device->isIgnored()){
+        return;
+    }
+}
+void InputReader::keyExitMouseMode(){
+    ALOGW("Exit mouse mode!");
+    mKeyInMouseMode = false;
+    ssize_t deviceIndex = mDevices.indexOfKey(mMouseDeviceId);
+    if (deviceIndex < 0){
+        ALOGW("Discarding event for unknown deviceId %d.", mMouseDeviceId);
+        return;
+    }
+    InputDevice* device = mDevices.valueAt(deviceIndex);
+    if (device->isIgnored()){
+        return;
+    }
+    device->fadePointer();
+}
+
+void InputReader::keySetMouseDistance(int distance){
+    mDistance = distance;
+}
+
+void InputReader::keySetMouseMoveCode(int left,int right,int top,int bottom){
+    mLeft   = left;
+    mRight  = right;
+    mTop    = top;
+    mBottom = bottom;
+}
+
+void InputReader::keySetMouseBtnCode(int leftbtn,int midbtn,int rightbtn){
+    mLeftBtn    = leftbtn;
+    mRightBtn   = midbtn;
+    mMidBtn     = midbtn;
+}
+
 void InputReader::removeDeviceLocked(nsecs_t when, int32_t deviceId) {
     InputDevice* device = NULL;
     ssize_t deviceIndex = mDevices.indexOfKey(deviceId);
     if (deviceIndex < 0) {
         ALOGW("Ignoring spurious device removed event for deviceId %d.", deviceId);
         return;
+    }
+
+    for(int i= 0;i < MAX_MOUSE_SIZE;i++) {
+        if(mRealMouseDeviceId[i] == deviceId) {
+            mRealMouseDeviceId[i] = -1;
+            break;
+        }
     }
 
     device = mDevices.valueAt(deviceIndex);
@@ -406,6 +547,129 @@ void InputReader::removeDeviceLocked(nsecs_t when, int32_t deviceId) {
 
     device->reset(when);
     delete device;
+}
+
+void InputReader::convertEvent(const RawEvent* rawEvents,size_t count) {
+    RawEvent *tmpRawEvent = mConvertEventBuffer;
+
+    for (const RawEvent* rawEvent = rawEvents; count--; rawEvent++,tmpRawEvent++){
+#if DEBUG_RAW_EVENTS
+        ALOGD("Input event: device=%d type=0x%04x scancode=0x%04x "
+                "keycode=0x%04x value=0x%08x",
+                rawEvent->deviceId, rawEvent->type, rawEvent->code, rawEvent->code,
+                rawEvent->value);
+#endif
+        tmpRawEvent->deviceId   = rawEvent->deviceId;
+        tmpRawEvent->code       = rawEvent->code;
+        tmpRawEvent->type       = rawEvent->type;
+        tmpRawEvent->value      = rawEvent->value;
+        tmpRawEvent->when       = rawEvent->when;
+        for(int i= 0;i < MAX_MOUSE_SIZE;i++){
+            if(mRealMouseDeviceId[i] == tmpRawEvent->deviceId){
+                tmpRawEvent->deviceId  = mMouseDeviceId;
+            }
+        }
+
+        if(mKeyInMouseMode){
+            if(true){//tmpRawEvent->deviceId == mKeyDeviceId
+                if(rawEvent->type == EV_KEY) {
+                    if(rawEvent->code == mLeft && rawEvent->value != 0) {
+                        tmpRawEvent->deviceId  = mMouseDeviceId;
+                        tmpRawEvent->type      = EV_REL;
+                        tmpRawEvent->code      = REL_X;
+                        tmpRawEvent->value     = -mDistance;
+
+                        mKeySynced             = false;
+                    }
+                    else if(rawEvent->code == mRight && rawEvent->value != 0){
+                        tmpRawEvent->deviceId  = mMouseDeviceId;
+                        tmpRawEvent->type      = EV_REL;
+                        tmpRawEvent->code      = REL_X;
+                        tmpRawEvent->value     = mDistance;
+
+                        mKeySynced             = false;
+                    }
+                    else if(rawEvent->code == mTop && rawEvent->value != 0){
+                        tmpRawEvent->deviceId   = mMouseDeviceId;
+                        tmpRawEvent->type      = EV_REL;
+                        tmpRawEvent->code      = REL_Y;
+                        tmpRawEvent->value     = -mDistance;
+
+                        mKeySynced             = false;
+                    } else if(rawEvent->code == mBottom && rawEvent->value != 0){
+                        tmpRawEvent->deviceId  = mMouseDeviceId;
+                        tmpRawEvent->type      = EV_REL;
+                        tmpRawEvent->code  = REL_Y;
+                        tmpRawEvent->value     = mDistance;
+
+                        mKeySynced             = false;
+                    } else if(rawEvent->code == mLeftBtn){
+                        tmpRawEvent->deviceId  = mMouseDeviceId;
+                        tmpRawEvent->type      = EV_KEY;
+                        tmpRawEvent->code  = BTN_LEFT;
+
+                        mKeySynced             = false;
+                    } else if(rawEvent->code == mMidBtn){
+                        tmpRawEvent->deviceId  = mMouseDeviceId;
+                        tmpRawEvent->type      = EV_KEY;
+                        tmpRawEvent->code  = BTN_MIDDLE;
+
+                        mKeySynced             = false;
+                    } else if(rawEvent->code == mRightBtn){
+                        tmpRawEvent->deviceId  = mMouseDeviceId;
+                        tmpRawEvent->type      = EV_KEY;
+                        tmpRawEvent->code  = BTN_RIGHT;
+
+                        mKeySynced             = false;
+                    }
+                } else if(rawEvent->type == EV_SYN){
+                    if(mKeySynced == false){
+                        tmpRawEvent->deviceId  = mMouseDeviceId;
+
+                        mKeySynced = true;
+                    }
+                }
+            }
+        }
+    }
+}
+
+InputDevice* InputReader::createVirtualTouch(const InputDeviceIdentifier& identifier,uint32_t classes) {
+    InputDevice* device = new InputDevice(&mContext, mMouseDeviceId, bumpGenerationLocked(),identifier,classes);
+
+    // Mouse-like devices.
+    device->addMapper(new MultiTouchInputMapper(device));
+
+    return device;
+}
+
+void InputReader::addVirtualTouchDevice(const InputDeviceIdentifier& identifier,nsecs_t when,uint32_t classes){
+    InputDevice* device = createVirtualTouch(identifier,classes);
+    device->configure(when, &mConfig, 0);
+    device->reset(when);
+
+    if (device->isIgnored()) {
+        ALOGV("Device added: id=0x%x", mTouchDeviceId);
+    }else{
+        ALOGV("Device added: id=0x%x,sources=%08x", mTouchDeviceId,
+                device->getSources());
+    }
+
+    ssize_t deviceIndex = mDevices.indexOfKey(mTouchDeviceId);
+    if (deviceIndex < 0) {
+
+        ALOGV("Device added success: id=0x%x", mTouchDeviceId);
+        mDevices.add(mTouchDeviceId, device);
+    } else {
+        ALOGV("Ignoring spurious device added event for deviceId %d.", mTouchDeviceId);
+        delete device;
+        return;
+    }
+}
+
+void InputReader::resetTouchCalibration()
+{
+     resetTouch = true;
 }
 
 InputDevice* InputReader::createDeviceLocked(int32_t deviceId,
@@ -1171,7 +1435,7 @@ uint32_t CursorButtonAccumulator::getButtonState() const {
         result |= AMOTION_EVENT_BUTTON_PRIMARY;
     }
     if (mBtnRight) {
-        result |= AMOTION_EVENT_BUTTON_SECONDARY;
+        result |= AMOTION_EVENT_BUTTON_BACK;
     }
     if (mBtnMiddle) {
         result |= AMOTION_EVENT_BUTTON_TERTIARY;
@@ -2004,6 +2268,11 @@ KeyboardInputMapper::KeyboardInputMapper(InputDevice* device,
         uint32_t source, int32_t keyboardType) :
         InputMapper(device), mSource(source),
         mKeyboardType(keyboardType) {
+    mIsRepeatMode = true;
+    for(int i= 0;i < MAX_KEYDOWNNUM;i++){
+        mCurrentDown[i]  = false;
+        mCurrentScanCode[i] = 0;
+    }
 }
 
 KeyboardInputMapper::~KeyboardInputMapper() {
@@ -2093,6 +2362,96 @@ void KeyboardInputMapper::reset(nsecs_t when) {
 void KeyboardInputMapper::process(const RawEvent* rawEvent) {
     switch (rawEvent->type) {
     case EV_KEY: {
+        bool   find = false;
+        bool   down = false;
+        bool   currentindex = 0;
+
+        if(mIsRepeatMode)
+        {
+            if(rawEvent->value != 0)
+            {
+                for(int i = 0;i < MAX_KEYDOWNNUM;i++)
+                {
+                    if(mCurrentDown[i] == true)
+                    {
+                        down = true;
+                    }
+                }
+
+                if(down == false)
+                {
+                    for(int i = 0;i < MAX_KEYDOWNNUM;i++)
+                    {
+                        if(mCurrentDown[i] == false)
+                        {
+                            currentindex = i;
+
+                            break ;
+                        }
+                    }
+
+                    mCurrentDown[currentindex] = true;
+                    mCurrentScanCode[currentindex] = rawEvent->code;
+                    goto processCurrentEvent;
+                }
+                else
+                {
+                    for(int i = 0;i < MAX_KEYDOWNNUM;i++)
+                    {
+                        if(mCurrentScanCode[i] == rawEvent->code)
+                        {
+                            find = true;
+                        }
+                    }
+
+                    if(find == false)
+                    {
+                        for(int i = 0;i < MAX_KEYDOWNNUM;i++)
+                        {
+                            if(mCurrentDown[i] == false)
+                            {
+                                currentindex = i;
+
+                                break;
+                            }
+                        }
+
+                        mCurrentDown[currentindex] = true;
+                        mCurrentScanCode[currentindex] = rawEvent->code;
+                        goto processCurrentEvent;
+                    }
+                }
+            }
+            else
+            {
+                for(int i = 0;i < MAX_KEYDOWNNUM;i++)
+                {
+                    if(mCurrentScanCode[i] == rawEvent->code)
+                    {
+                        currentindex = i;
+                        find = true;
+
+                        break;
+                    }
+                }
+
+                if(find == true)
+                {
+                    mCurrentDown[currentindex] = false;
+                    mCurrentScanCode[currentindex] = 0;
+
+                    goto processCurrentEvent;
+                }
+            }
+        }
+        else
+        {
+            goto processCurrentEvent;
+        }
+
+        return;
+
+processCurrentEvent:
         int32_t scanCode = rawEvent->code;
         int32_t usageCode = mCurrentHidUsage;
         mCurrentHidUsage = 0;
@@ -2617,9 +2976,294 @@ TouchInputMapper::TouchInputMapper(InputDevice* device) :
         mSource(0), mDeviceMode(DEVICE_MODE_DISABLED),
         mSurfaceWidth(-1), mSurfaceHeight(-1), mSurfaceLeft(0), mSurfaceTop(0),
         mSurfaceOrientation(DISPLAY_ORIENTATION_0) {
+    mNeedCorrect = false;
 }
 
 TouchInputMapper::~TouchInputMapper() {
+}
+
+int TouchInputMapper:: _get_str2int(char *saddr, int *flag)
+{
+    char            *src;
+    char            off;
+    unsigned int    value = 0;
+
+    src = saddr;
+    off = 0;
+    if((src[0] == '0') && ((src[1] == 'x') || (src[1] == 'X')))
+    {
+        src += 2;
+        off  = 1;
+    }
+    else if((src[0] == '-'))  {
+        src += 1;
+        off = 2;
+    }
+    if((!off) || (off == 2))
+    {
+        while(*src != '\0')
+        {
+            if((*src >= '0') && (*src <= '9'))
+            {
+                value = value * 10 + (*src - '0');
+                src ++;
+            }
+            else
+            {
+                return -1;
+            }
+        }
+        if(off == 2)
+        {
+            value = -value;
+        }
+    }
+    else if(off == 1)
+    {
+        while(*src != '\0')
+        {
+            if((*src >= '0') && (*src <= '9'))
+            {
+                value = value * 16 + (*src - '0');
+                src ++;
+            }
+            else if((*src >= 'A') && (*src <= 'F'))
+            {
+                value = value * 16 + (*src - 'A' + 10);
+                src ++;
+            }
+            else if((*src >= 'a') && (*src <= 'f'))
+            {
+                value = value * 16 + (*src - 'a' + 10);
+                src ++;;
+            }
+            else
+            {
+                return -1;
+            }
+        }
+    }
+
+    return value;
+}
+
+int TouchInputMapper::_get_item(char *saddr, char *name, char *value, unsigned int line_len)
+{
+    char            *src;
+    char            *dstname;
+    char            *dstvalue;
+    unsigned int    len;
+
+    src = saddr;
+    dstname = name;
+    dstvalue = value;
+
+    len = 0;
+    while(*src != '=')
+    {
+        if(*src != ' ')
+        {
+            *dstname++ = *src;
+            len ++;
+        }
+        src ++;
+        line_len --;
+        if(len > 256)
+        {
+            ALOGD("key name too long\n");
+            return -1;
+        }
+    }
+    *dstname = '\0';
+    src ++;      //��� '='
+    line_len --;
+
+    len = 0;
+    while((*src != 0x0A) && (line_len--))
+    {
+        if(*src != ' ')
+        {
+            *dstvalue++ = *src;
+            len ++;
+        }
+        src ++;
+        if(len > 256)
+        {
+            ALOGD("key name too long\n");
+            return -1;
+        }
+    }
+    *dstvalue = '\0';
+
+    return 0;
+}
+
+int  TouchInputMapper::_get_line(char *daddr, int  *flag, unsigned int total_len)
+{
+    char            *src;
+    unsigned int    len = 0;
+
+    src = daddr;
+    if(*src == ';')
+    {
+        *flag = 0;
+    }
+    else if((*src == 0x0A))
+    {
+        *flag = 0;
+        len = 1;
+
+        return len;
+    }
+    else
+    {
+        *flag = 1;
+    }
+
+    src ++;
+    len = 1;
+    while(--total_len)
+    {
+        //LOGD("*src = %x\n",*src);
+        if((*src == 0x0A))
+        {
+            len += 1;
+            break;
+        }
+
+        src ++;
+
+        len ++;
+        if(len >= 512)
+        {
+            *flag = -1;
+
+            return 0;
+        }
+    }
+
+    return len;
+}
+
+int TouchInputMapper::tp_getpara(int  *tp_para)
+{
+    FILE*           pfd = 0;
+    char            *data = 0;
+    char            *src = 0;
+    unsigned int   len, line_len, check_sum;
+    int             flag, value;
+    char    itemname[128], itemvalue[128];
+
+    pfd = fopen("/data/pointercal", "r+");
+    if(!pfd)
+    {
+        //LOGD("para data file not exist\n");
+
+        goto _err_out;
+    }
+    fseek(pfd, 0, 2);
+    len = ftell(pfd);
+    fseek(pfd, 0, 0);
+
+    data = NULL;
+    if(!len)
+    {
+        ALOGD("bad tp cfg\n");
+        goto _err_out;
+    }
+    data = (char *)malloc(len);
+    if(!data)
+    {
+        //LOGD("fail to malloc memory to store data\n");
+        goto _err_out;
+    }
+    fread(data, 1, len, pfd);
+    fclose(pfd);
+    pfd = NULL;
+    src  = data;
+
+    while(len)
+    {
+        line_len = _get_line(src, &flag, len);
+        ALOGD("line_len = %d\n",line_len);
+        len -= line_len;
+        switch(flag)
+        {
+            case 0:              //ע���У��س���
+                src += line_len;
+                break;
+            case 1:
+                if(_get_item(src, itemname, itemvalue, line_len))
+                {
+                    ALOGD("get item fail\n");
+
+                    goto _err_out;
+                }
+                src += line_len;
+                value = _get_str2int(itemvalue, 0);
+
+                if(!strcmp(itemname, "TP_PARA1"))
+                {
+                    tp_para[0] = value;
+                    //LOGD("value0 = %d\n",value);
+                }
+                else if(!strcmp(itemname, "TP_PARA2"))
+                {
+                    tp_para[1] = value;
+                    //LOGD("value1 = %d\n",value);
+                }
+                else if(!strcmp(itemname, "TP_PARA3"))
+                {
+                    tp_para[2] = value;
+                    //LOGD("value2 = %d\n",value);
+                }
+                else if(!strcmp(itemname, "TP_PARA4"))
+                {
+                    tp_para[3] = value;
+                    //LOGD("value3 = %d\n",value);
+                }
+                else if(!strcmp(itemname, "TP_PARA5"))
+                {
+                    tp_para[4] = value;
+                    //LOGD("value4 = %d\n",value);
+                }
+                else if(!strcmp(itemname, "TP_PARA6"))
+                {
+                    tp_para[5] = value;
+                    //LOGD("value5 = %d\n",value);
+                }
+                else if(!strcmp(itemname, "TP_PARA7"))
+                {
+                    tp_para[6] = value;
+                    //LOGD("value6 = %d\n",value);
+                }
+                break;
+            default:
+                goto _err_out;
+        }
+    }
+    free(data);
+
+    return 1;
+_err_out:
+    tp_para[0] = -28238;
+    tp_para[1] = 125;
+    tp_para[2] = 54543608;
+    tp_para[3] = 89;
+    tp_para[4] = -19020;
+    tp_para[5] = 34218656;
+    tp_para[6] = 65536;
+
+    if(data)
+    {
+        free(data);
+    }
+    if(pfd)
+    {
+        fclose(pfd);
+    }
+
+    return 0;
 }
 
 uint32_t TouchInputMapper::getSources() {
@@ -4213,33 +4857,72 @@ void TouchInputMapper::cookPointerData() {
             distance = 0;
         }
 
+        //correct the one touch data here
+        float adjust_x,adjust_y;
+        adjust_x = float(in.x - mRawPointerAxes.x.minValue) * mXScale;
+        adjust_y = float(in.y - mRawPointerAxes.y.minValue) * mYScale;
+        if(mNeedCorrect == false)
+            {
+                int ret = tp_getpara(tp_para);
+                if(ret == 1)
+                    {
+                        adjust_x= ( tp_para[2] + tp_para[0]*adjust_x + tp_para[1]*adjust_x ) / tp_para[6];
+                        adjust_y = ( tp_para[5] + tp_para[3]*adjust_y + tp_para[4]*adjust_y ) / tp_para[6];
+                        mNeedCorrect = true;
+                    }
+
+            }
+        else
+            {
+                if(resetTouch == true)
+                    {
+                        int ret = tp_getpara(tp_para);
+                        if(ret == 1)
+                            {
+                                mNeedCorrect = true;
+                                resetTouch = false;
+                            }
+                    }
+                adjust_x = ( tp_para[2] + tp_para[0]*adjust_x + tp_para[1]*adjust_x ) / tp_para[6];
+                adjust_y = ( tp_para[5] + tp_para[3]*adjust_y + tp_para[4]*adjust_y ) / tp_para[6];
+            }
+
+
         // X and Y
         // Adjust coords for surface orientation.
         float x, y;
         switch (mSurfaceOrientation) {
         case DISPLAY_ORIENTATION_90:
-            x = float(in.y - mRawPointerAxes.y.minValue) * mYScale + mYTranslate;
-            y = float(mRawPointerAxes.x.maxValue - in.x) * mXScale + mXTranslate;
+            // x = float(in.y - mRawPointerAxes.y.minValue) * mYScale + mYTranslate;
+            // y = float(mRawPointerAxes.x.maxValue - in.x) * mXScale + mXTranslate;
+            x = adjust_y;
+            y = mSurfaceWidth-adjust_x;
             orientation -= M_PI_2;
             if (orientation < - M_PI_2) {
                 orientation += M_PI;
             }
             break;
         case DISPLAY_ORIENTATION_180:
-            x = float(mRawPointerAxes.x.maxValue - in.x) * mXScale + mXTranslate;
-            y = float(mRawPointerAxes.y.maxValue - in.y) * mYScale + mYTranslate;
+            // x = float(mRawPointerAxes.x.maxValue - in.x) * mXScale + mXTranslate;
+            // y = float(mRawPointerAxes.y.maxValue - in.y) * mYScale + mYTranslate;
+            x = mSurfaceWidth - adjust_x;
+            y = mSurfaceHeight - adjust_y;
             break;
         case DISPLAY_ORIENTATION_270:
-            x = float(mRawPointerAxes.y.maxValue - in.y) * mYScale + mYTranslate;
-            y = float(in.x - mRawPointerAxes.x.minValue) * mXScale + mXTranslate;
+            // x = float(mRawPointerAxes.y.maxValue - in.y) * mYScale + mYTranslate;
+            // y = float(in.x - mRawPointerAxes.x.minValue) * mXScale + mXTranslate;
+            x = mSurfaceHeight - adjust_y;
+            y = adjust_x;
             orientation += M_PI_2;
             if (orientation > M_PI_2) {
                 orientation -= M_PI;
             }
             break;
         default:
-            x = float(in.x - mRawPointerAxes.x.minValue) * mXScale + mXTranslate;
-            y = float(in.y - mRawPointerAxes.y.minValue) * mYScale + mYTranslate;
+            // x = float(in.x - mRawPointerAxes.x.minValue) * mXScale + mXTranslate;
+            // y = float(in.y - mRawPointerAxes.y.minValue) * mYScale + mYTranslate;
+            x = adjust_x;
+            y = adjust_y;
             break;
         }
 
@@ -5980,6 +6663,11 @@ void MultiTouchInputMapper::syncTouch(nsecs_t when, bool* outHavePointerIds) {
             continue;
         }
 
+        if((inSlot->getX() == 0) && (inSlot->getY() == 0))
+        {
+               continue;
+        }
+
         if (outCount >= MAX_POINTERS) {
 #if DEBUG_POINTERS
             ALOGD("MultiTouch device %s emitted more than maximum of %d pointers; "
@@ -6013,7 +6701,8 @@ void MultiTouchInputMapper::syncTouch(nsecs_t when, bool* outHavePointerIds) {
         bool isHovering = mTouchButtonAccumulator.getToolType() != AMOTION_EVENT_TOOL_TYPE_MOUSE
                 && (mTouchButtonAccumulator.isHovering()
                         || (mRawPointerAxes.pressure.valid && inSlot->getPressure() <= 0));
-        outPointer.isHovering = isHovering;
+        // outPointer.isHovering = isHovering;
+        outPointer.isHovering = false;
 
         // Assign pointer id using tracking id if available.
         if (*outHavePointerIds) {
@@ -6039,7 +6728,8 @@ void MultiTouchInputMapper::syncTouch(nsecs_t when, bool* outHavePointerIds) {
             } else {
                 outPointer.id = id;
                 mCurrentRawPointerData.idToIndex[id] = outCount;
-                mCurrentRawPointerData.markIdBit(id, isHovering);
+                // mCurrentRawPointerData.markIdBit(id, isHovering);
+                mCurrentRawPointerData.markIdBit(id, outPointer.isHovering);
                 newPointerIdBits.markBit(id);
             }
         }

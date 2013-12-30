@@ -345,7 +345,7 @@ public class WifiWatchdogStateMachine extends StateMachine {
         // Watchdog is always enabled. Poor network detection can be seperately turned on/off
         // TODO: Remove this setting & clean up state machine since we always have
         // watchdog in an enabled state
-        putSettingsGlobalBoolean(contentResolver, Settings.Global.WIFI_WATCHDOG_ON, true);
+        putSettingsGlobalBoolean(contentResolver, Settings.Global.WIFI_WATCHDOG_ON, false);
 
         WifiWatchdogStateMachine wwsm = new WifiWatchdogStateMachine(context);
         wwsm.start();
