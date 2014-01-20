@@ -1307,16 +1307,21 @@ class ServerThread extends Thread {
                     audioOutputChannels.add(audio);
                 }
             }
-            Log.d(TAG, "active the saved audio channels " + audioOutputChannels);
-            ArrayList<String> activedChannels = new ArrayList<String>();
-            if(audioOutputChannels.contains(AudioManager.AUDIO_NAME_SPDIF)){
-                activedChannels.add(AudioManager.AUDIO_NAME_SPDIF);
-            }else if(finalFormat.mOutputType == DisplayManagerAw.DISPLAY_OUTPUT_TYPE_HDMI){
-                activedChannels.add(AudioManager.AUDIO_NAME_HDMI);
-            }else{
-                activedChannels.add(AudioManager.AUDIO_NAME_CODEC);
+
+            if (audioOutputChannels.isEmpty()) {
+                ArrayList<String> activedChannels = new ArrayList<String>();
+                if(audioOutputChannels.contains(AudioManager.AUDIO_NAME_SPDIF)){
+                    activedChannels.add(AudioManager.AUDIO_NAME_SPDIF);
+                }else if(finalFormat.mOutputType == DisplayManagerAw.DISPLAY_OUTPUT_TYPE_HDMI){
+                    activedChannels.add(AudioManager.AUDIO_NAME_HDMI);
+                }else{
+                    activedChannels.add(AudioManager.AUDIO_NAME_CODEC);
+                }
+                audioManager.setAudioDeviceActive(activedChannels,AudioManager.AUDIO_OUTPUT_ACTIVE);
+            } else {
+                Log.d(TAG, "active the saved audio channels " + audioOutputChannels);
+                audioManager.setAudioDeviceActive(audioOutputChannels,AudioManager.AUDIO_OUTPUT_ACTIVE);
             }
-            audioManager.setAudioDeviceActive(activedChannels,AudioManager.AUDIO_OUTPUT_ACTIVE);
             /* record the audio output channel */
             String st = null;
             for(int i = 0; i < audioOutputChannels.size(); i++){
