@@ -40,6 +40,10 @@ import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 
+import android.app.ActivityThread;
+import android.content.pm.IPackageManager;
+import android.content.pm.PackageManager;
+
 /**
  * Represents the local device Bluetooth adapter. The {@link BluetoothAdapter}
  * lets you perform fundamental Bluetooth tasks, such as initiate
@@ -361,6 +365,26 @@ public final class BluetoothAdapter {
     private Handler mServiceRecordHandler;
 
     /**
+     * Helper to check if this device has FEATURE_BLUETOOTH, but without using
+     * a context.
+     * Equivalent to
+     * context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH)
+     */
+    private static boolean hasBluetoothFeature() {
+        IPackageManager pm = ActivityThread.getPackageManager();
+        if (pm == null) {
+            Log.e(TAG, "Cannot get package manager, assuming no Bluetooth feature");
+            return false;
+        }
+        try {
+            return pm.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH);
+        } catch (RemoteException e) {
+            Log.e(TAG, "Package manager query failed, assuming no Bluetooth feature", e);
+            return false;
+        }
+    }
+
+    /**
      * Get a handle to the default local Bluetooth adapter.
      * <p>Currently Android only supports one Bluetooth adapter, but the API
      * could be extended to support more. This will always return the default
@@ -370,6 +394,11 @@ public final class BluetoothAdapter {
      */
     public static synchronized BluetoothAdapter getDefaultAdapter() {
         if (sAdapter == null) {
+            if (!hasBluetoothFeature()) {
+                Log.i(TAG, "this device does not have Bluetooth support");
+                return null;
+            }
+
             IBinder b = ServiceManager.getService(BLUETOOTH_MANAGER_SERVICE);
             if (b != null) {
                 IBluetoothManager managerService = IBluetoothManager.Stub.asInterface(b);
