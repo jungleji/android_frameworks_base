@@ -539,28 +539,7 @@ static M4OSA_ERR checkClipVideoProfileAndLevel(M4DECODER_VideoDecoders *pDecoder
         }
 
         if (foundCodec) {
-            VideoComponentCapabilities* pComponent = pVideoDecoder->component;
-            for (size_t i = 0; i < pVideoDecoder->componentNumber; i++) {
-                if (pComponent != M4OSA_NULL) {
-                    VideoProfileLevel *pProfileLevel = pComponent->profileLevel;
-                    for (size_t j =0; j < pComponent->profileNumber; j++) {
-                        // Check the profile and level
-                        if (pProfileLevel != M4OSA_NULL) {
-                            if (profile == pProfileLevel->mProfile) {
-                                foundProfile = M4OSA_TRUE;
-
-                                if (level <= pProfileLevel->mLevel) {
-                                    return M4NO_ERROR;
-                                }
-                            } else {
-                                foundProfile = M4OSA_FALSE;
-                            }
-                        }
-                        pProfileLevel++;
-                    }
-                }
-                pComponent++;
-            }
+            return M4NO_ERROR;
         }
     }
 

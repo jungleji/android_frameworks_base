@@ -33,4 +33,6 @@ public interface MediaScannerClient
      * Called by native code to return mime type extracted from DRM content.
      */
     public void setMimeType(String mimeType);
+
+    public void scanBDDirectory(String Path,long lastModified, long fileSize);
 }

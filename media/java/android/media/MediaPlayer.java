@@ -59,6 +59,13 @@ import java.util.Set;
 import java.util.Vector;
 import java.lang.ref.WeakReference;
 
+import android.provider.MediaStore;
+import android.database.Cursor;
+import android.bluray.BlurayVideoInfor;
+import android.bluray.BlurayAudioInfor;
+import android.bluray.BluraySubtitleInfor;
+import android.bluray.BlurayManager;
+
 /**
  * MediaPlayer class can be used to control playback
  * of audio/video files and streams. An example on how to use the methods in
@@ -893,8 +900,9 @@ public class MediaPlayer implements SubtitleController.Listener
         }
 
         AssetFileDescriptor fd = null;
+        ContentResolver resolver = null;
         try {
-            ContentResolver resolver = context.getContentResolver();
+            resolver = context.getContentResolver();
             fd = resolver.openAssetFileDescriptor(uri, "r");
             if (fd == null) {
                 return;
@@ -916,13 +924,52 @@ public class MediaPlayer implements SubtitleController.Listener
             }
         }
 
-        Log.d(TAG, "Couldn't open file on client side, trying server side");
+        String mine = null;
+        if (resolver != null) {
+            mine = resolver.getType(uri);
+            Log.d(TAG,"mine = "+mine);
+        }
 
-        setDataSource(uri.toString(), headers);
+        if ((mine != null) && (mine.equals("video/iso"))) {
+            String path = null;
 
-        if (scheme.equalsIgnoreCase("http")
+            if (uri.toString().startsWith("file://")) {
+                path = uri.toString();
+            } else {
+                try {
+                    String[] mCols = new String[]
+                        {
+                            MediaStore.Video.Media.DISPLAY_NAME,
+                            MediaStore.Video.Media.DURATION,
+                            MediaStore.Video.Media.MIME_TYPE,
+                            MediaStore.Video.Media.SIZE,
+                            MediaStore.Video.Media._ID,
+                            MediaStore.Video.Media.DATA,
+                            MediaStore.Video.Media.BOOKMARK
+                        };
+                    Cursor cursor = resolver.query(uri, mCols, null, null, null);
+
+                    if (cursor != null && cursor.getCount() >= 0) {
+                        cursor.moveToFirst();
+                        path = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATA));
+                        cursor.close();
+                    }
+                }
+                finally {
+                }
+            }
+
+            if (path != null) {
+                setDataSource(path);
+            }
+        } else {
+            Log.d(TAG, "Couldn't open file on client side, trying server side");
+            setDataSource(uri.toString(), headers);
+
+            if (scheme.equalsIgnoreCase("http")
                 || scheme.equalsIgnoreCase("https")) {
-            setupProxyListener(context);
+                setupProxyListener(context);
+            }
         }
     }
 
@@ -982,7 +1029,7 @@ public class MediaPlayer implements SubtitleController.Listener
         }
 
         final File file = new File(path);
-        if (file.exists()) {
+        if (file.exists() && file.isFile()) {
             FileInputStream is = new FileInputStream(file);
             FileDescriptor fd = is.getFD();
             setDataSource(fd);
@@ -1492,6 +1539,111 @@ public class MediaPlayer implements SubtitleController.Listener
      */
     public native void attachAuxEffect(int effectId);
 
+    public native int _isBluray();
+    public boolean isBluray()
+    {
+        int code = _isBluray();
+        if(code == 0) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /* Do not change these values (starting with KEY_PARAMETER) without updating
+     * their counterparts in include/media/mediaplayer.h!
+     */
+
+    // There are currently no defined keys usable from Java with get*Parameter.
+    // But if any keys are defined, the order must be kept in sync with include/media/mediaplayer.h.
+    // private static final int KEY_PARAMETER_... = ...;
+
+    /**
+     * Sets the parameter indicated by key.
+     * @param key key indicates the parameter to be set.
+     * @param value value of the parameter to be set.
+     * @return true if the parameter is set successfully, false otherwise
+     * {@hide}
+     */
+    public native boolean setParameter(int key, Parcel value);
+
+    /**
+     * Sets the parameter indicated by key.
+     * @param key key indicates the parameter to be set.
+     * @param value value of the parameter to be set.
+     * @return true if the parameter is set successfully, false otherwise
+     * {@hide}
+     */
+    public boolean setParameter(int key, String value) {
+        Parcel p = Parcel.obtain();
+        p.writeString(value);
+        boolean ret = setParameter(key, p);
+        p.recycle();
+        return ret;
+    }
+
+    /**
+     * Sets the parameter indicated by key.
+     * @param key key indicates the parameter to be set.
+     * @param value value of the parameter to be set.
+     * @return true if the parameter is set successfully, false otherwise
+     * {@hide}
+     */
+    public boolean setParameter(int key, int value) {
+        Parcel p = Parcel.obtain();
+        p.writeInt(value);
+        boolean ret = setParameter(key, p);
+        p.recycle();
+        return ret;
+    }
+
+    /*
+     * Gets the value of the parameter indicated by key.
+     * @param key key indicates the parameter to get.
+     * @param reply value of the parameter to get.
+     */
+    private native void getParameter(int key, Parcel reply);
+
+    /**
+     * Gets the value of the parameter indicated by key.
+     * The caller is responsible for recycling the returned parcel.
+     * @param key key indicates the parameter to get.
+     * @return value of the parameter.
+     * {@hide}
+     */
+    public Parcel getParcelParameter(int key) {
+        Parcel p = Parcel.obtain();
+        getParameter(key, p);
+        return p;
+    }
+
+    /**
+     * Gets the value of the parameter indicated by key.
+     * @param key key indicates the parameter to get.
+     * @return value of the parameter.
+     * {@hide}
+     */
+    public String getStringParameter(int key) {
+        Parcel p = Parcel.obtain();
+        getParameter(key, p);
+        String ret = p.readString();
+        p.recycle();
+        return ret;
+    }
+
+    /**
+     * Gets the value of the parameter indicated by key.
+     * @param key key indicates the parameter to get.
+     * @return value of the parameter.
+     * {@hide}
+     */
+    public int getIntParameter(int key) {
+        Parcel p = Parcel.obtain();
+        getParameter(key, p);
+        int ret = p.readInt();
+        p.recycle();
+        return ret;
+    }
 
     /**
      * Sets the send level of the player to the attached auxiliary effect
@@ -2167,6 +2319,15 @@ public class MediaPlayer implements SubtitleController.Listener
     private static final int MEDIA_INFO = 200;
     private static final int MEDIA_SUBTITLE_DATA = 201;
 
+    private static final int MEDIA_BLURAY_INFOR = 300;
+
+    private static final int MEDIA_BLURAY_ISO_MOUNT_START  = 300;
+    private static final int MEDIA_BLURAY_ISO_MOUNT_END = 301;
+    private static final int MEDIA_BLURAY_ISO_UNMOUNT_START = 302;
+    private static final int MEDIA_BLURAY_ISO_UNMOUNT_END = 303;
+    private static final int MEDIA_BLURAY_ISO_PLAY_START = 304;
+    private static final int MEDIA_BLURAY_PLAY_NEXT  = 305;
+
     private TimeProvider mTimeProvider;
 
     /** @hide */
@@ -2195,7 +2356,6 @@ public class MediaPlayer implements SubtitleController.Listener
             try {
             switch(msg.what) {
             case MEDIA_PREPARED:
-                scanInternalSubtitleTracks();
                 if (mOnPreparedListener != null)
                     mOnPreparedListener.onPrepared(mMediaPlayer);
                 return;
@@ -2259,7 +2419,6 @@ public class MediaPlayer implements SubtitleController.Listener
                     Log.i(TAG, "Info (" + msg.arg1 + "," + msg.arg2 + ")");
                     break;
                 case MEDIA_INFO_METADATA_UPDATE:
-                    scanInternalSubtitleTracks();
                     // fall through
 
                 case MEDIA_INFO_EXTERNAL_METADATA_UPDATE:
@@ -2302,6 +2461,23 @@ public class MediaPlayer implements SubtitleController.Listener
                 return;
 
             case MEDIA_NOP: // interface test message - ignore
+                break;
+
+            case MEDIA_BLURAY_INFOR:
+                if (mBlurayEventListener != null) {
+                    if (msg.obj == null) {
+                        mBlurayEventListener.onEvent(mMediaPlayer,0,0,0);
+                    } else {
+                        if (msg.obj instanceof Parcel) {
+                            Parcel parcel = (Parcel)msg.obj;
+                            int operate = parcel.readInt();
+                            int code = parcel.readInt();
+                            int reson = parcel.readInt();
+                            parcel.recycle();
+                            mBlurayEventListener.onEvent(mMediaPlayer,operate,code,reson);
+                        }
+                    }
+                }
                 break;
 
             default:
@@ -2543,6 +2719,30 @@ public class MediaPlayer implements SubtitleController.Listener
     }
 
     private OnSubtitleDataListener mOnSubtitleDataListener;
+
+    /**
+     * Interface definition of a callback to be invoked when a
+     * operation of bluray.
+     */
+    public interface OnBlurayEventListener
+    {
+        /**
+         * Called to indicate an avaliable timed text
+         *
+         * @param mp             the MediaPlayer associated with this callback
+         * @param operation      the success or fail operation of bluray
+         *        code           fail/success
+         *        reson
+         */
+        public void onEvent(MediaPlayer mp, int operation,int code,int reson);
+    }
+
+    public void setOnBlurayEventListener(OnBlurayEventListener listener)
+    {
+        mBlurayEventListener = listener;
+    }
+
+    private OnBlurayEventListener mBlurayEventListener;
 
     /* Do not change these values without updating their counterparts
      * in include/media/mediaplayer.h!

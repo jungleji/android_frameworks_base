@@ -117,6 +117,7 @@ public class MediaScanner
     }
 
     private final static String TAG = "MediaScanner";
+    private final static boolean DEBUG_MEDIASCANNER = false;
 
     private static final String[] FILES_PRESCAN_PROJECTION = new String[] {
             Files.FileColumns._ID, // 0
@@ -321,7 +322,7 @@ public class MediaScanner
     private final boolean mExternalIsEmulated;
 
     /** whether to use bulk inserts or individual inserts for each item */
-    private static final boolean ENABLE_BULK_INSERTS = true;
+    private static final boolean ENABLE_BULK_INSERTS = false;
 
     // used when scanning the image database so we know whether we have to prune
     // old thumbnail files
@@ -350,6 +351,7 @@ public class MediaScanner
     // set to true if file path comparisons should be case insensitive.
     // this should be set when scanning files on a case insensitive file system.
     private boolean mCaseInsensitivePaths;
+    private boolean mIsUsbStorage = false;
 
     private final BitmapFactory.Options mBitmapOptions = new BitmapFactory.Options();
 
@@ -515,6 +517,63 @@ public class MediaScanner
             return entry;
         }
 
+        public void scanBDDirectory(String path,long lastModified, long fileSize)
+        {
+            mMimeType = "video/iso";
+            mFileType = MediaFile.getFileTypeForMimeType(mMimeType);;
+            mFileSize = fileSize;
+
+            FileEntry entry = makeEntryFor(path);
+            // add some slack to avoid a rounding error
+            long delta = (entry != null) ? (lastModified - entry.mLastModified) : 0;
+            boolean wasModified = delta > 1 || delta < -1;
+
+            if (entry == null || wasModified) {
+                if (wasModified) {
+                    entry.mLastModified = lastModified;
+                } else {
+                    entry = new FileEntry(0, path, lastModified,MtpConstants.FORMAT_ASSOCIATION);
+                }
+                entry.mLastModifiedChanged = true;
+            }
+
+            // clear all the metadata
+            mArtist = null;
+            mAlbumArtist = null;
+            mAlbum = null;
+            mTitle = null;
+            mComposer = null;
+            mGenre = null;
+            mTrack = 0;
+            mYear = 0;
+            mDuration = 0;
+            mPath = path;
+            mLastModified = lastModified;
+            mWriter = null;
+            mCompilation = 0;
+            mIsDrm = false;
+            mWidth = 0;
+            mHeight = 0;
+
+            if (path.startsWith("/mnt/usb_storage"))
+                mIsUsbStorage =true;
+            else
+                mIsUsbStorage =false;
+
+            // (even though it already exists in the database), to trigger
+            // the correct code path for updating its entry
+            if (mMtpObjectHandle != 0) {
+                entry.mRowId = 0;
+            }
+
+            try {
+                if (entry != null && (entry.mLastModifiedChanged)) {
+                    endFile(entry,false,false,false,false,false);
+                }
+            } catch (RemoteException e) {
+            }
+        }
+
         @Override
         public void scanFile(String path, long lastModified, long fileSize,
                 boolean isDirectory, boolean noMedia) {
@@ -530,6 +589,11 @@ public class MediaScanner
             try {
                 FileEntry entry = beginFile(path, mimeType, lastModified,
                         fileSize, isDirectory, noMedia);
+
+                if (path.startsWith("/mnt/usb_storage"))
+                    mIsUsbStorage = true;
+                else
+                    mIsUsbStorage = false;
 
                 // if this file was just inserted via mtp, set the rowid to zero
                 // (even though it already exists in the database), to trigger
@@ -567,12 +631,8 @@ public class MediaScanner
                         }
 
                         // we only extract metadata for audio and video files
-                        if (isaudio || isvideo) {
+                        if (isaudio) {
                             processFile(path, mimeType, this);
-                        }
-
-                        if (isimage) {
-                            processImageFile(path);
                         }
 
                         result = endFile(entry, ringtones, notifications, alarms, music, podcasts);
@@ -814,6 +874,18 @@ public class MediaScanner
         private Uri endFile(FileEntry entry, boolean ringtones, boolean notifications,
                 boolean alarms, boolean music, boolean podcasts)
                 throws RemoteException {
+
+            if (mIsUsbStorage == true) {
+                boolean isAudio = MediaFile.isAudioFileType(mFileType);
+                boolean isVideo = MediaFile.isVideoFileType(mFileType);
+                boolean isImage = MediaFile.isImageFileType(mFileType);
+                boolean isPlayList = MediaFile.isPlayListFileType(mFileType);
+                boolean isDrm = MediaFile.isDrmFileType(mFileType);
+
+                if (!isVideo && !isAudio && !isImage && !isPlayList && !isDrm)
+                    return null;
+            }
+
             // update database
 
             // use album artist if artist is missing
@@ -1080,8 +1152,8 @@ public class MediaScanner
         if (filePath != null) {
             // query for only one file
             where = MediaStore.Files.FileColumns._ID + ">?" +
-                " AND " + Files.FileColumns.DATA + "=?";
-            selectionArgs = new String[] { "", filePath };
+                " AND " + Files.FileColumns.DATA + " like '"+ filePath + "%' ";
+            selectionArgs = new String[] { "" };
         } else {
             where = MediaStore.Files.FileColumns._ID + ">?";
             selectionArgs = new String[] { "" };
@@ -1313,7 +1385,10 @@ public class MediaScanner
         try {
             long start = System.currentTimeMillis();
             initialize(volumeName);
-            prescan(null, true);
+            for (int i = 0; i < directories.length; i++) {
+                prescan(directories[i], true);
+            }
+
             long prescan = System.currentTimeMillis();
 
             if (ENABLE_BULK_INSERTS) {
@@ -1499,7 +1574,7 @@ public class MediaScanner
             selectionArgs = new String[] { path };
             c = mMediaProvider.query(mPackageName, mFilesUriNoNotify, FILES_PRESCAN_PROJECTION,
                     where, selectionArgs, null, null);
-            if (c.moveToFirst()) {
+            if (c != null && c.moveToFirst()) {
                 long rowId = c.getLong(FILES_PRESCAN_ID_COLUMN_INDEX);
                 int format = c.getInt(FILES_PRESCAN_FORMAT_COLUMN_INDEX);
                 long lastModified = c.getLong(FILES_PRESCAN_DATE_MODIFIED_COLUMN_INDEX);

@@ -19,6 +19,7 @@
 #define LOG_TAG "MediaScannerJNI"
 #include <utils/Log.h>
 #include <utils/threads.h>
+#include <utils/Unicode.h>
 #include <media/mediascanner.h>
 #include <media/stagefright/StagefrightMediaScanner.h>
 
@@ -135,6 +136,10 @@ public:
                                     mediaScannerClientInterface,
                                     "setMimeType",
                                     "(Ljava/lang/String;)V");
+            mScanBDDirectoryMethodID = env->GetMethodID(
+                                    mediaScannerClientInterface,
+                                    "scanBDDirectory",
+                                    "(Ljava/lang/String;JJ)V");
         }
     }
 
@@ -215,12 +220,27 @@ public:
         return checkAndClearExceptionFromCallback(mEnv, "setMimeType");
     }
 
+    virtual status_t scanBDDirectory(const char* path, long long lastModified, long long fileSize)
+    {
+        jstring pathStr;
+        if ((pathStr = mEnv->NewStringUTF(path)) == NULL) {
+            mEnv->ExceptionClear();
+            return NO_MEMORY;
+        }
+
+        mEnv->CallVoidMethod(mClient, mScanBDDirectoryMethodID, pathStr, lastModified,fileSize);
+
+        mEnv->DeleteLocalRef(pathStr);
+        return checkAndClearExceptionFromCallback(mEnv, "scanBDDirectory");
+    }
+
 private:
     JNIEnv *mEnv;
     jobject mClient;
     jmethodID mScanFileMethodID;
     jmethodID mHandleStringTagMethodID;
     jmethodID mSetMimeTypeMethodID;
+    jmethodID mScanBDDirectoryMethodID;
 };
 
 

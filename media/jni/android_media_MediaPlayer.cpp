@@ -888,6 +888,52 @@ android_media_MediaPlayer_updateProxyConfig(
     }
 }
 
+static jboolean
+android_media_MediaPlayer_setParameter(JNIEnv *env, jobject thiz, jint key, jobject java_request)
+{
+    ALOGV("setParameter: key %d", key);
+    sp<MediaPlayer> mp = getMediaPlayer(env, thiz);
+    if (mp == NULL ) {
+        jniThrowException(env, "java/lang/IllegalStateException", NULL);
+        return false;
+    }
+
+    Parcel *request = parcelForJavaObject(env, java_request);
+    status_t err = mp->setParameter(key, *request);
+    if (err == OK) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+static void
+android_media_MediaPlayer_getParameter(JNIEnv *env, jobject thiz, jint key, jobject java_reply)
+{
+    ALOGV("getParameter: key %d", key);
+    sp<MediaPlayer> mp = getMediaPlayer(env, thiz);
+    if (mp == NULL ) {
+        jniThrowException(env, "java/lang/IllegalStateException", NULL);
+        return;
+    }
+
+    Parcel *reply = parcelForJavaObject(env, java_reply);
+    process_media_player_call(env, thiz, mp->getParameter(key, reply), NULL, NULL );
+}
+
+static int
+android_media_MediaPlayer_isBluray(JNIEnv *env,  jobject thiz)
+{
+    sp<MediaPlayer> mp = getMediaPlayer(env, thiz);
+    if (mp == NULL ) {
+        jniThrowException(env, "java/lang/IllegalStateException", NULL);
+        return 0;
+    }
+
+    return mp->isBluray();
+}
+
+
 // ----------------------------------------------------------------------------
 
 static JNINativeMethod gMethods[] = {
@@ -932,6 +978,9 @@ static JNINativeMethod gMethods[] = {
     {"updateProxyConfig", "(Landroid/net/ProxyProperties;)V", (void *)android_media_MediaPlayer_updateProxyConfig},
     {"_suspend",             "()Z",                             (void *)android_media_MediaPlayer_suspend},
     {"_resume",              "()Z",                             (void *)android_media_MediaPlayer_resume},
+    {"setParameter",        "(ILandroid/os/Parcel;)Z",          (void *)android_media_MediaPlayer_setParameter},
+    {"getParameter",        "(ILandroid/os/Parcel;)V",          (void *)android_media_MediaPlayer_getParameter},
+    {"_isBluray",           "()I",                              (void *)android_media_MediaPlayer_isBluray},
 };
 
 static const char* const kClassPathName = "android/media/MediaPlayer";
