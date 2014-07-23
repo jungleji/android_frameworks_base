@@ -171,6 +171,7 @@ class ServerThread {
         Object qcCon = null;
         WifiP2pService wifiP2p = null;
         WifiService wifi = null;
+        EthernetService ethernet = null;
         NsdService serviceDiscovery= null;
         IPackageManager pm = null;
         Context context = null;
@@ -607,6 +608,15 @@ class ServerThread {
                } catch (Throwable e) {
                    reportWtf("starting Connectivity Service", e);
                }
+
+               try {
+                   Slog.i(TAG, "Ethernet Service");
+                   ethernet = new EthernetService(context);
+                   ServiceManager.addService(Context.ETHERNET_SERVICE, ethernet);
+               } catch (Throwable e) {
+                   reportWtf("starting Ethernet Service", e);
+               }
+               // ethernet.setEthernetEnabled(true);
 
                 try {
                     Slog.i(TAG, "Network Service Discovery Service");

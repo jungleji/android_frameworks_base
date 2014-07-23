@@ -7440,6 +7440,7 @@ package android.content.pm {
     field public static final java.lang.String FEATURE_FAKETOUCH = "android.hardware.faketouch";
     field public static final java.lang.String FEATURE_FAKETOUCH_MULTITOUCH_DISTINCT = "android.hardware.faketouch.multitouch.distinct";
     field public static final java.lang.String FEATURE_FAKETOUCH_MULTITOUCH_JAZZHAND = "android.hardware.faketouch.multitouch.jazzhand";
+    field public static final java.lang.String FEATURE_ETHERNET = "com.android.hardware.ethernet";
     field public static final java.lang.String FEATURE_HOME_SCREEN = "android.software.home_screen";
     field public static final java.lang.String FEATURE_INPUT_METHODS = "android.software.input_methods";
     field public static final java.lang.String FEATURE_LIVE_WALLPAPER = "android.software.live_wallpaper";
@@ -14240,6 +14241,37 @@ package android.net {
     method public android.net.VpnService.Builder setConfigureIntent(android.app.PendingIntent);
     method public android.net.VpnService.Builder setMtu(int);
     method public android.net.VpnService.Builder setSession(java.lang.String);
+  }
+
+}
+
+package android.net.ethernet {
+
+  public class EthernetManager {
+    ctor public EthernetManager(android.net.ethernet.IEthernetManager, android.os.Handler);
+    method public int getEthernetCarrierState();
+    method public int getEthernetConnectState();
+    method public java.lang.String getEthernetHwaddr(java.lang.String);
+    method public java.lang.String getEthernetIfaceName();
+    method public int getEthernetIfaceState();
+    method public boolean setEthernetEnabled(boolean);
+    field public static final boolean DEBUG = true;
+  }
+
+  public abstract interface IEthernetManager implements android.os.IInterface {
+    method public abstract int getEthernetCarrierState() throws android.os.RemoteException;
+    method public abstract int getEthernetConnectState() throws android.os.RemoteException;
+    method public abstract java.lang.String getEthernetHwaddr(java.lang.String) throws android.os.RemoteException;
+    method public abstract java.lang.String getEthernetIfaceName() throws android.os.RemoteException;
+    method public abstract int getEthernetIfaceState() throws android.os.RemoteException;
+    method public abstract boolean setEthernetEnabled(boolean) throws android.os.RemoteException;
+  }
+
+  public static abstract class IEthernetManager.Stub extends android.os.Binder implements android.net.ethernet.IEthernetManager {
+    ctor public IEthernetManager.Stub();
+    method public android.os.IBinder asBinder();
+    method public static android.net.ethernet.IEthernetManager asInterface(android.os.IBinder);
+    method public boolean onTransact(int, android.os.Parcel, android.os.Parcel, int) throws android.os.RemoteException;
   }
 
 }
@@ -21407,6 +21439,7 @@ package android.provider {
     field public static final java.lang.String DTMF_TONE_WHEN_DIALING = "dtmf_tone";
     field public static final java.lang.String END_BUTTON_BEHAVIOR = "end_button_behavior";
     field public static final java.lang.String FONT_SCALE = "font_scale";
+    field public static final java.lang.String ETHERNET_ON = "ethernet_on";
     field public static final java.lang.String HAPTIC_FEEDBACK_ENABLED = "haptic_feedback_enabled";
     field public static final deprecated java.lang.String HTTP_PROXY = "http_proxy";
     field public static final deprecated java.lang.String INSTALL_NON_MARKET_APPS = "install_non_market_apps";

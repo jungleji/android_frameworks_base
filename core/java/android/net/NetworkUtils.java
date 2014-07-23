@@ -130,7 +130,7 @@ public class NetworkUtils {
      * @param inetAddr is an InetAddress corresponding to the IPv4 address
      * @return the IP address as an integer in network byte order
      */
-    public static int inetAddressToInt(Inet4Address inetAddr)
+    public static int inetAddressToInt(InetAddress inetAddr)
             throws IllegalArgumentException {
         byte [] addr = inetAddr.getAddress();
         return ((addr[3] & 0xff) << 24) | ((addr[2] & 0xff) << 16) |

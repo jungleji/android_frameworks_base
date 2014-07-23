@@ -138,6 +138,9 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import android.net.ethernet.EthernetManager;
+import android.net.ethernet.IEthernetManager;
+
 class ReceiverRestrictedContext extends ContextWrapper {
     ReceiverRestrictedContext(Context base) {
         super(base);
@@ -562,6 +565,13 @@ class ContextImpl extends Context {
                     IBinder b = ServiceManager.getService(WIFI_P2P_SERVICE);
                     IWifiP2pManager service = IWifiP2pManager.Stub.asInterface(b);
                     return new WifiP2pManager(service);
+                }});
+
+        registerService(ETHERNET_SERVICE, new ServiceFetcher() {
+                public Object createService(ContextImpl ctx) {
+                    IBinder b = ServiceManager.getService(ETHERNET_SERVICE);
+                    IEthernetManager service = IEthernetManager.Stub.asInterface(b);
+                    return new EthernetManager(service, ctx.mMainThread.getHandler());
                 }});
 
         registerService(WINDOW_SERVICE, new ServiceFetcher() {

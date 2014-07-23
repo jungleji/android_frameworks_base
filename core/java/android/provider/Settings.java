@@ -1729,6 +1729,48 @@ public final class Settings {
         public static final String WIFI_STATIC_DNS2 = "wifi_static_dns2";
 
         /**
+         * Whether to use static IP and other static network attributes.
+         * @hide
+         * Set to 1 for true and 0 for false.
+         */
+        public static final String ETHERNET_USE_STATIC_IP = "ethernet_use_static_ip";
+
+        /**
+         * The static IP address.
+         * @hide
+         * Example: "192.168.1.51"
+         */
+        public static final String ETHERNET_STATIC_IP = "ethernet_static_ip";
+
+        /**
+         * If using static IP, the gateway's IP address.
+         * @hide
+         * Example: "192.168.1.1"
+         */
+        public static final String ETHERNET_STATIC_GATEWAY = "ethernet_static_gateway";
+
+        /**
+         * If using static IP, the net mask.
+         * @hide
+         * Example: "255.255.255.0"
+         */
+        public static final String ETHERNET_STATIC_NETMASK = "ethernet_static_netmask";
+
+        /**
+         * If using static IP, the primary DNS's IP address.
+         * @hide
+         * Example: "192.168.1.1"
+         */
+        public static final String ETHERNET_STATIC_DNS1 = "ethernet_static_dns1";
+
+        /**
+         * If using static IP, the secondary DNS's IP address.
+         * @hide
+         * Example: "192.168.1.2"
+         */
+        public static final String ETHERNET_STATIC_DNS2 = "ethernet_static_dns2";
+
+        /**
          * Allows automatic retrieval of mms contents
          * <p>Type: INT</p>
          * 0 -- false
@@ -3728,6 +3770,8 @@ public final class Settings {
         @Deprecated
         public static final String BLUETOOTH_ON = Global.BLUETOOTH_ON;
 
+        public static final String ETHERNET_ON = Secure.ETHERNET_ON;
+
         /**
          * @deprecated Use {@link android.provider.Settings.Global#DATA_ROAMING} instead
          */
@@ -4808,6 +4852,11 @@ public final class Settings {
          */
         public static final String ENABLED_ACCESSIBILITY_SERVICES =
             "enabled_accessibility_services";
+
+        /**
+         * @hide
+         */
+        public static final String ETHERNET_ON = "ethernet_on";
 
         /**
          * List of the accessibility services to which the user has granted

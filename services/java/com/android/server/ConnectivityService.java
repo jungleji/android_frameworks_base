@@ -55,7 +55,7 @@ import android.database.ContentObserver;
 import android.net.CaptivePortalTracker;
 import android.net.ConnectivityManager;
 import android.net.DummyDataStateTracker;
-import android.net.EthernetDataTracker;
+import android.net.ethernet.EthernetDataTracker;
 import android.net.IConnectivityManager;
 import android.net.INetworkManagementEventObserver;
 import android.net.INetworkPolicyListener;
@@ -174,7 +174,7 @@ import javax.net.ssl.SSLSession;
 public class ConnectivityService extends IConnectivityManager.Stub {
     private static final String TAG = "ConnectivityService";
 
-    protected static final boolean DBG = true;
+    protected static final boolean DBG = false;
     protected static final boolean VDBG = false;
 
     protected static final boolean LOGD_RULES = false;
