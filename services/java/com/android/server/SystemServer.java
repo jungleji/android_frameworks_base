@@ -616,7 +616,7 @@ class ServerThread {
                } catch (Throwable e) {
                    reportWtf("starting Ethernet Service", e);
                }
-               // ethernet.setEthernetEnabled(true);
+               ethernet.setEthernetEnabled(false);
 
                 try {
                     Slog.i(TAG, "Network Service Discovery Service");
@@ -947,7 +947,6 @@ class ServerThread {
                 }
             }
 
-
             try {
                 Slog.i(TAG, "EdgeGesture service");
                 edgeGestureService = new EdgeGestureService(context, inputManager);
@@ -955,6 +954,8 @@ class ServerThread {
             } catch (Throwable e) {
                 Slog.e(TAG, "Failure starting EdgeGesture service", e);
             }
+
+            ethernet.setEthernetEnabled(true);
         }
 
         // make sure the ADB_ENABLED setting value matches the secure property value

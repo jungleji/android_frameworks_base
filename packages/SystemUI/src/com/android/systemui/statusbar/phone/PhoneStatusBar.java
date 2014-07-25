@@ -3205,7 +3205,7 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
         }
 
         int batteryStyle = Settings.System.getIntForUser(resolver,
-                Settings.System.STATUS_BAR_BATTERY, 0, mCurrentUserId);
+                Settings.System.STATUS_BAR_BATTERY, 4, mCurrentUserId);
         BatteryMeterMode mode = BatteryMeterMode.BATTERY_METER_ICON_PORTRAIT;
         switch (batteryStyle) {
             case 2:
@@ -3249,7 +3249,7 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
 
         int signalStyle = Settings.System.getIntForUser(resolver,
                 Settings.System.STATUS_BAR_SIGNAL_TEXT,
-                SignalClusterView.STYLE_NORMAL, mCurrentUserId);
+                SignalClusterView.STYLE_HIDDEN, mCurrentUserId);
         if (MSimTelephonyManager.getDefault().isMultiSimEnabled()) {
             mMSimSignalClusterView.setStyle(signalStyle);
         } else {

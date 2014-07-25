@@ -108,6 +108,7 @@
                     android:layout_width="@dimen/status_bar_battery_width"
                     android:layout_marginBottom="@dimen/status_bar_battery_bottom_padding"
                     android:layout_marginStart="4dip"
+                    android:visibility="gone"
                     />
                 <com.android.systemui.DockBatteryMeterView
                     android:id="@+id/dock_battery"

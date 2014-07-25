@@ -14255,7 +14255,7 @@ package android.net.ethernet {
     method public java.lang.String getEthernetIfaceName();
     method public int getEthernetIfaceState();
     method public boolean setEthernetEnabled(boolean);
-    field public static final boolean DEBUG = true;
+    field public static final boolean DEBUG = false;
   }
 
   public abstract interface IEthernetManager implements android.os.IInterface {
