@@ -440,10 +440,10 @@ public class AudioService extends IAudioService.Stub {
     public final static int STREAM_REMOTE_MUSIC = -200;
 
     // Devices for which the volume is fixed and VolumePanel slider should be disabled
-    final int mFixedVolumeDevices = AudioSystem.DEVICE_OUT_AUX_DIGITAL |
+    final int mFixedVolumeDevices = 0; /*AudioSystem.DEVICE_OUT_AUX_DIGITAL |
             AudioSystem.DEVICE_OUT_DGTL_DOCK_HEADSET |
             AudioSystem.DEVICE_OUT_ALL_USB |
-            AudioSystem.DEVICE_OUT_PROXY; // use fixed volume on proxy device(WiFi display)
+            AudioSystem.DEVICE_OUT_PROXY; */// use fixed volume on proxy device(WiFi display)
 
     // TODO merge orientation and rotation
     private final boolean mMonitorOrientation;
@@ -2895,6 +2895,8 @@ public class AudioService extends IAudioService.Stub {
             // selection if not the speaker.
             if ((device & AudioSystem.DEVICE_OUT_SPEAKER) != 0) {
                 device = AudioSystem.DEVICE_OUT_SPEAKER;
+	    } else if ((device & AudioSystem.DEVICE_OUT_AUX_DIGITAL) != 0) {
+		device = AudioSystem.DEVICE_OUT_AUX_DIGITAL;
             } else {
                 device &= AudioSystem.DEVICE_OUT_ALL_A2DP;
             }
@@ -4031,6 +4033,24 @@ public class AudioService extends IAudioService.Stub {
         synchronized (mConnectedDevices) {
             boolean isConnected = (mConnectedDevices.containsKey(device) &&
                     (params.isEmpty() || mConnectedDevices.get(device).equals(params)));
+
+            boolean isSpdifOrHdmi = ((device == AudioSystem.DEVICE_OUT_ANLG_DOCK_HEADSET) ||
+                                     (device == AudioSystem.DEVICE_OUT_AUX_DIGITAL));
+            if (isSpdifOrHdmi) {
+                if (!connected) {
+                    AudioSystem.setDeviceConnectionState(device,
+                                                         AudioSystem.DEVICE_STATE_UNAVAILABLE,
+                                                         mConnectedDevices.get(device));
+                    mConnectedDevices.remove(device);
+                    return true;
+                } else {
+                    AudioSystem.setDeviceConnectionState(device,
+                                                         AudioSystem.DEVICE_STATE_AVAILABLE,
+                                                         params);
+                    mConnectedDevices.put(new Integer(device), params);
+                    return true;
+                }
+            }
 
             if (isConnected && !connected) {
                 AudioSystem.setDeviceConnectionState(device,

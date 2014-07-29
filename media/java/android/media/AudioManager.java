@@ -463,6 +463,8 @@ public class AudioManager {
 
     private static IAudioService sService;
 
+    private static int mVolume = 0;
+
     /**
      * @hide
      */
@@ -577,7 +579,14 @@ public class AudioManager {
                     if (mUseMasterVolume) {
                         setMasterMute(!isMasterMute());
                     } else {
-                        // TODO: Actually handle MUTE.
+                        if (getStreamVolume(STREAM_MUSIC) != 0) {
+                            mVolume = getStreamVolume(STREAM_MUSIC);
+                            Log.d(TAG,"mVolume = "+mVolume);
+                            setStreamVolume(STREAM_MUSIC, 0, FLAG_SHOW_UI);
+                        } else {
+                            Log.d(TAG,"mVolume = "+mVolume);
+                            setStreamVolume(STREAM_MUSIC, mVolume, FLAG_SHOW_UI);
+                        }
                     }
                 }
                 break;
